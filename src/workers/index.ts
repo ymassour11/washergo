@@ -6,17 +6,23 @@
  */
 
 import "dotenv/config";
-import { Worker } from "bullmq";
+import { Worker, Job } from "bullmq";
 import { getRedisConfig } from "@/lib/redis";
 import { processWebhookEvent } from "@/lib/queue/handlers/process-webhook";
 import { sendNotification } from "@/lib/queue/handlers/send-email";
 import { releaseSlotHold } from "@/lib/queue/handlers/release-slot";
 import { logger } from "@/lib/logger";
+import type { StripeWebhookJob } from "@/lib/queue/jobs";
 
 const log = logger.child({ service: "worker" });
 const connection = getRedisConfig();
 
-const webhookWorker = new Worker("stripe-webhook", processWebhookEvent, {
+/** Adapter: BullMQ Job → plain object for processWebhookEvent */
+async function processWebhookJob(job: Job<StripeWebhookJob>) {
+  await processWebhookEvent({ stripeEventId: job.data.stripeEventId });
+}
+
+const webhookWorker = new Worker("stripe-webhook", processWebhookJob, {
   connection,
   concurrency: 5,
 });

@@ -1,13 +1,16 @@
-import { Job } from "bullmq";
 import { prisma } from "@/lib/prisma";
+import { stripe } from "@/lib/stripe";
 import { logger, AppLogger } from "@/lib/logger";
 import { canTransition } from "@/lib/booking-machine";
-import { notificationQueue } from "@/lib/queue/client";
-import type { StripeWebhookJob } from "@/lib/queue/jobs";
 
-export async function processWebhookEvent(job: Job<StripeWebhookJob>) {
-  const { stripeEventId } = job.data;
-  const log = logger.child({ stripeEventId, jobId: job.id });
+/**
+ * Process a Stripe webhook event inline.
+ * Accepts a plain object so it can be called directly from the API route
+ * (Vercel serverless) without requiring BullMQ.
+ */
+export async function processWebhookEvent(data: { stripeEventId: string }) {
+  const { stripeEventId } = data;
+  const log = logger.child({ stripeEventId });
 
   const event = await prisma.stripeEvent.findUnique({
     where: { stripeEventId },
@@ -29,6 +32,9 @@ export async function processWebhookEvent(job: Job<StripeWebhookJob>) {
     switch (event.type) {
       case "checkout.session.completed":
         await handleCheckoutComplete(payload, log);
+        break;
+      case "invoice.created":
+        await handleInvoiceCreated(payload, log);
         break;
       case "invoice.paid":
         await handleInvoicePaid(payload, log);
@@ -101,6 +107,21 @@ async function handleCheckoutComplete(payload: Record<string, unknown>, log: App
   log.info({ bookingId }, "Booking advanced to PAID_SETUP");
 }
 
+async function handleInvoiceCreated(payload: Record<string, unknown>, log: AppLogger) {
+  const invoice = payload as { id: string; subscription?: string; status?: string };
+  if (!invoice.subscription || invoice.status !== "draft") return;
+
+  const booking = await prisma.booking.findFirst({
+    where: { stripeSubscriptionId: invoice.subscription },
+  });
+  if (!booking) return;
+
+  await stripe.invoices.update(invoice.id, {
+    statement_descriptor: "GOWASH",
+  });
+  log.info({ invoiceId: invoice.id }, "Set GOWASH statement descriptor on invoice");
+}
+
 async function handleInvoicePaid(payload: Record<string, unknown>, log: AppLogger) {
   const invoice = payload as {
     id: string;
@@ -165,10 +186,8 @@ async function handleInvoicePaymentFailed(payload: Record<string, unknown>, log:
       where: { id: booking.id },
       data: { status: "PAST_DUE" },
     });
-    await notificationQueue.add("payment-failed", {
-      type: "payment_failed",
-      bookingId: booking.id,
-    });
+    // TODO: Send payment failed notification (email/SMS)
+    log.info({ bookingId: booking.id }, "Payment failed notification pending");
     log.info({ bookingId: booking.id }, "Booking marked PAST_DUE");
   }
 }
@@ -186,10 +205,8 @@ async function handleSubscriptionDeleted(payload: Record<string, unknown>, log: 
       where: { id: booking.id },
       data: { status: "CANCELED" },
     });
-    await notificationQueue.add("subscription-canceled", {
-      type: "subscription_canceled",
-      bookingId: booking.id,
-    });
+    // TODO: Send subscription canceled notification (email/SMS)
+    log.info({ bookingId: booking.id }, "Subscription canceled notification pending");
     log.info({ bookingId: booking.id }, "Booking canceled due to subscription deletion");
   }
 }

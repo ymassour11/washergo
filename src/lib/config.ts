@@ -52,6 +52,7 @@ export const TERMS: Record<TermType, TermConfig> = {
     description: "Best value. Everything included.",
     minimumTermMonths: 12,
     perks: [
+      "Free delivery & pickup",
       "Priority swap (2 business days)",
       "One free move within service area",
     ],
@@ -130,7 +131,7 @@ export const PRICING: Record<PackageType, Record<TermType, PricingCell>> = {
     },
     TWELVE_MONTH: {
       monthlyPriceCents: 5900,
-      setupFeeCents: 3900,
+      setupFeeCents: 0,
       stripeMonthlyPriceIdEnvKey: "STRIPE_PRICE_WD_12MO_MONTHLY",
       stripeSetupPriceIdEnvKey: "STRIPE_PRICE_WD_12MO_SETUP",
     },
@@ -150,7 +151,7 @@ export const PRICING: Record<PackageType, Record<TermType, PricingCell>> = {
     },
     TWELVE_MONTH: {
       monthlyPriceCents: 3600,
-      setupFeeCents: 3900,
+      setupFeeCents: 0,
       stripeMonthlyPriceIdEnvKey: "STRIPE_PRICE_WO_12MO_MONTHLY",
       stripeSetupPriceIdEnvKey: "STRIPE_PRICE_WO_12MO_SETUP",
     },
@@ -170,7 +171,7 @@ export const PRICING: Record<PackageType, Record<TermType, PricingCell>> = {
     },
     TWELVE_MONTH: {
       monthlyPriceCents: 3200,
-      setupFeeCents: 3900,
+      setupFeeCents: 0,
       stripeMonthlyPriceIdEnvKey: "STRIPE_PRICE_DO_12MO_MONTHLY",
       stripeSetupPriceIdEnvKey: "STRIPE_PRICE_DO_12MO_SETUP",
     },

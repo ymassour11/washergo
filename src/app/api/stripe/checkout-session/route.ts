@@ -104,6 +104,7 @@ export async function POST(req: NextRequest) {
       metadata: { bookingId },
       subscription_data: {
         metadata: { bookingId },
+        description: "GoWash appliance rental",
       },
       success_url: `${appUrl}/book/${bookingId}?step=7&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${appUrl}/book/${bookingId}?step=6&canceled=true`,

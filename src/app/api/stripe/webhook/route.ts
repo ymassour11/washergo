@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { stripe } from "@/lib/stripe";
-import { stripeWebhookQueue } from "@/lib/queue/client";
+import { processWebhookEvent } from "@/lib/queue/handlers/process-webhook";
 import { logger } from "@/lib/logger";
 
 /**
@@ -12,10 +12,8 @@ import { logger } from "@/lib/logger";
  * Flow:
  * 1. Verify signature
  * 2. Store event in StripeEvent table (idempotency key: stripeEventId)
- * 3. Enqueue to BullMQ for durable processing
- * 4. Return 200 immediately
- *
- * The actual business logic runs in the worker (process-webhook handler).
+ * 3. Process event inline (no BullMQ — compatible with Vercel serverless)
+ * 4. Return 200
  */
 export async function POST(req: NextRequest) {
   const log = logger.child({ route: "POST /api/stripe/webhook" });
@@ -65,17 +63,10 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Enqueue for durable processing
-    await stripeWebhookQueue.add(
-      `webhook-${event.id}`,
-      {
-        stripeEventId: event.id,
-        eventType: event.type,
-      },
-      { jobId: event.id }, // Deduplicate by event ID
-    );
+    // Process inline (Vercel serverless — no BullMQ worker)
+    await processWebhookEvent({ stripeEventId: event.id });
 
-    log.info({ eventId: event.id }, "Event stored and enqueued");
+    log.info({ eventId: event.id }, "Event stored and processed");
 
     return NextResponse.json({ received: true });
   } catch (error) {
