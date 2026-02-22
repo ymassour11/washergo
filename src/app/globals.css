@@ -1,26 +1,244 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-sans: "Space Grotesk", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+  --color-brutal-blue: #0055FF;
+  --color-brutal-yellow: #FFE500;
+  --color-brutal-pink: #FF00E5;
+  --color-brutal-green: #00FF94;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: "Space Grotesk", sans-serif;
+  background-color: #F0F0F0;
+  color: #000000;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
+
+h1, h2, h3, h4, h5, h6, .font-sans {
+  font-family: "Space Grotesk", sans-serif;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+}
+
+/* ── Neo-Brutalist Design System ──────────── */
+
+.neo-brutal-shadow {
+  box-shadow: 4px 4px 0px 0px #000000;
+}
+
+.neo-brutal-shadow-lg {
+  box-shadow: 8px 8px 0px 0px #000000;
+}
+
+.neo-brutal-card {
+  background: white;
+  border: 3px solid #000000;
+  box-shadow: 6px 6px 0px 0px #000000;
+  transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.neo-brutal-card:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 10px 10px 0px 0px #000000;
+}
+
+.neo-brutal-btn {
+  background: var(--color-brutal-blue);
+  color: white;
+  border: 3px solid #000000;
+  box-shadow: 4px 4px 0px 0px #000000;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: all 0.1s ease;
+  cursor: pointer;
+}
+
+.neo-brutal-btn:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 6px 6px 0px 0px #000000;
+}
+
+.neo-brutal-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 0px 0px 0px 0px #000000;
+}
+
+.neo-brutal-input {
+  border: 3px solid #000000;
+  padding: 1rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.neo-brutal-input:focus {
+  outline: none;
+  box-shadow: 4px 4px 0px 0px var(--color-brutal-blue);
+  transform: translate(-2px, -2px);
+}
+
+.neo-brutal-pill {
+  border: 2px solid #000000;
+  padding: 0.5rem 1.5rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  transition: all 0.2s ease;
+}
+
+.neo-brutal-pill.active {
+  background: #000000;
+  color: white;
+}
+
+/* Custom Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f0f0f0;
+  border-left: 3px solid #000;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #000;
+  border: 2px solid #f0f0f0;
+}
+
+/* ── Brutalist Shadows & Interactions ──────────── */
+
+.brutal-shadow {
+  box-shadow: 8px 8px 0px 0px #000000;
+}
+
+.brutal-shadow-white {
+  box-shadow: 6px 6px 0px 0px #FFFFFF;
+}
+
+.brutal-card {
+  box-shadow: 8px 8px 0px 0px #000000;
+  transition: all 0.2s ease-out;
+}
+
+.brutal-card:hover {
+  transform: translate(-4px, -4px);
+  box-shadow: 12px 12px 0px 0px #000000;
+}
+
+.brutal-btn {
+  box-shadow: 6px 6px 0px 0px #000000;
+  transition: all 0.15s ease-out;
+}
+
+.brutal-btn:hover {
+  transform: translate(2px, 2px);
+  box-shadow: 4px 4px 0px 0px #000000;
+}
+
+.brutal-btn:active {
+  transform: translate(6px, 6px);
+  box-shadow: 0px 0px 0px 0px #000000;
+}
+
+.brutal-btn:disabled {
+  opacity: 0.5;
+  transform: translate(6px, 6px);
+  box-shadow: 0px 0px 0px 0px #000000;
+  cursor: not-allowed;
+}
+
+/* ── Admin styles (kept from previous design) ──── */
+
+:root {
+  --background: #FAF9F6;
+  --foreground: #1C1917;
+  --surface: #FFFFFF;
+  --primary: #0F766E;
+  --primary-light: #14B8A6;
+  --primary-dark: #0D5D56;
+  --primary-50: #F0FDFA;
+  --accent: #EA580C;
+  --accent-dark: #C2410C;
+  --accent-light: #FB923C;
+  --success: #16A34A;
+  --warning: #D97706;
+  --danger: #DC2626;
+  --text: #1C1917;
+  --text-secondary: #57534E;
+  --text-muted: #A8A29E;
+  --border: #E7E5E4;
+  --border-hover: #D6D3D1;
+  --surface-raised: #F5F5F4;
+}
+
+/* Admin input/button styles */
+.input-base {
+  width: 100%;
+  border-radius: 10px;
+  border: 1.5px solid var(--border);
+  padding: 12px 16px;
+  font-size: 15px;
+  font-family: inherit;
+  background: var(--surface);
+  color: var(--text);
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.input-base:hover { border-color: var(--border-hover); }
+.input-base:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.08); }
+.input-base::placeholder { color: var(--text-muted); }
+
+.focus-ring { outline: none; transition: box-shadow 0.2s ease, border-color 0.2s ease; }
+.focus-ring:focus { box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12); border-color: var(--primary); }
+
+.btn-primary {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  border-radius: 12px; padding: 14px 28px; font-size: 16px; font-weight: 600;
+  font-family: inherit; color: #fff; background: var(--accent);
+  box-shadow: 0 4px 14px -3px rgba(234, 88, 12, 0.35); transition: all 0.25s ease;
+  cursor: pointer; border: none;
+}
+.btn-primary:hover:not(:disabled) { background: var(--accent-dark); transform: translateY(-1px); }
+.btn-primary:disabled { background: #D6D3D1; box-shadow: none; cursor: not-allowed; color: #A8A29E; }
+
+.btn-secondary {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  border-radius: 12px; padding: 14px 24px; font-size: 15px; font-weight: 500;
+  font-family: inherit; color: var(--text-secondary); background: var(--surface);
+  border: 1.5px solid var(--border); transition: all 0.2s ease; cursor: pointer;
+}
+.btn-secondary:hover { background: var(--surface-raised); border-color: var(--border-hover); }
+
+.btn-teal {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  border-radius: 12px; padding: 14px 28px; font-size: 16px; font-weight: 600;
+  font-family: inherit; color: #fff; background: var(--primary);
+  box-shadow: 0 4px 14px -3px rgba(15, 118, 110, 0.35); transition: all 0.25s ease;
+  cursor: pointer; border: none;
+}
+.btn-teal:hover:not(:disabled) { background: var(--primary-dark); transform: translateY(-1px); }
+.btn-teal:disabled { background: #D6D3D1; box-shadow: none; cursor: not-allowed; color: #A8A29E; }
+
+/* Admin animations */
+.animate-fade-in-up { animation: fadeInUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.animate-fade-in { animation: fadeIn 0.5s ease-out both; }
+.animate-scale-in { animation: scaleIn 0.4s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.animate-shimmer {
+  background: linear-gradient(90deg, #F5F5F4 25%, #E7E5E4 50%, #F5F5F4 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes scaleIn { from { opacity: 0; transform: scale(0.92); } to { opacity: 1; transform: scale(1); } }
+@keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+
+.custom-scrollbar::-webkit-scrollbar { width: 5px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: #D6D3D1; border-radius: 3px; }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #A8A29E; }

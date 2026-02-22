@@ -1,0 +1,361 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Auth / Admin ────────────────────────────────────────
+
+enum UserRole {
+  ADMIN
+  STAFF
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  passwordHash  String
+  role          UserRole  @default(STAFF)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  auditLogs AuditLog[]
+
+  @@map("users")
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String
+  action    String   // e.g. "booking.mark_active", "booking.cancel"
+  targetId  String?  // ID of the entity acted upon
+  details   Json?    // Additional context
+  ip        String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([targetId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+// ─── Customer ────────────────────────────────────────────
+
+model Customer {
+  id        String   @id @default(uuid())
+  name      String
+  email     String
+  phone     String
+  createdAt DateTime @default(now())
+
+  bookings Booking[]
+
+  @@index([email])
+  @@map("customers")
+}
+
+// ─── Booking ─────────────────────────────────────────────
+
+enum BookingStatus {
+  DRAFT
+  QUALIFIED
+  SCHEDULED
+  PAID_SETUP
+  CONTRACT_SIGNED
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  CLOSED
+}
+
+enum PackageType {
+  WASHER_DRYER
+  WASHER_ONLY
+  DRYER_ONLY
+}
+
+enum TermType {
+  MONTH_TO_MONTH
+  SIX_MONTH
+  TWELVE_MONTH
+}
+
+enum DryerPlugType {
+  THREE_PRONG
+  FOUR_PRONG
+}
+
+model Booking {
+  id         String        @id @default(uuid())
+  customerId String?
+  status     BookingStatus @default(DRAFT)
+  currentStep Int          @default(1)
+
+  // ── Package + Term (snapshot at booking time) ──
+  packageType       PackageType?
+  termType          TermType?
+  monthlyPriceCents Int?
+  setupFeeCents     Int?
+  minimumTermMonths Int?
+  taxRateBps        Int?         // basis points, placeholder for tax
+
+  // ── Step 1: Eligibility ──
+  serviceZip     String?
+  hasHookups     Boolean?
+
+  // ── Step 3: Address + Property ──
+  addressLine1   String?
+  addressLine2   String?
+  city           String?
+  state          String?
+  zip            String?
+  floor          Int?
+  hasElevator    Boolean?
+  gateCode       String?
+  entryNotes     String?
+  deliveryNotes  String?
+
+  // ── Step 4: Hookups verification ──
+  dryerPlugType        DryerPlugType?
+  hasHotColdValves     Boolean?
+  hasDrainAccess       Boolean?
+  hookupPhotos         String[]       // URLs, future use
+
+  // ── Step 5: Delivery ──
+  deliverySlotId String?
+
+  // ── Step 6: Stripe ──
+  stripeCustomerId     String?
+  stripeSubscriptionId String?
+  stripeCheckoutSessionId String?
+
+  // ── Step 7: Contract ──
+  contractVersionId    String?
+  contractSignedAt     DateTime?
+  contractSignerName   String?
+  contractSignerIp     String?
+  contractSignerAgent  String?
+
+  // ── Admin ──
+  adminNotes String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  customer         Customer?          @relation(fields: [customerId], references: [id])
+  deliverySlot     DeliverySlot?      @relation(fields: [deliverySlotId], references: [id])
+  contractVersion  ContractVersion?   @relation(fields: [contractVersionId], references: [id])
+  slotHolds        SlotHold[]
+  paymentRecords   PaymentRecord[]
+  assignments      Assignment[]
+
+  @@index([status])
+  @@index([customerId])
+  @@index([stripeCustomerId])
+  @@index([createdAt])
+  @@map("bookings")
+}
+
+// ─── Delivery Slots ──────────────────────────────────────
+
+model DeliverySlot {
+  id          String   @id @default(uuid())
+  date        DateTime @db.Date
+  windowLabel String   // e.g. "9:00 AM - 12:00 PM"
+  windowStart String   // "09:00"
+  windowEnd   String   // "12:00"
+  capacity    Int      @default(2)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  bookings  Booking[]
+  slotHolds SlotHold[]
+
+  @@unique([date, windowStart])
+  @@index([date, isActive])
+  @@map("delivery_slots")
+}
+
+model SlotHold {
+  id         String   @id @default(uuid())
+  bookingId  String
+  slotId     String
+  expiresAt  DateTime
+  released   Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  booking      Booking      @relation(fields: [bookingId], references: [id])
+  deliverySlot DeliverySlot @relation(fields: [slotId], references: [id])
+
+  @@index([slotId, released, expiresAt])
+  @@index([bookingId])
+  @@map("slot_holds")
+}
+
+// ─── Stripe Events (idempotency) ─────────────────────────
+
+model StripeEvent {
+  id            String   @id @default(cuid())
+  stripeEventId String   @unique
+  type          String
+  processed     Boolean  @default(false)
+  processedAt   DateTime?
+  payload       Json
+  error         String?
+  createdAt     DateTime @default(now())
+
+  @@index([stripeEventId])
+  @@index([processed])
+  @@map("stripe_events")
+}
+
+// ─── Payment Records (invoice snapshots) ─────────────────
+
+model PaymentRecord {
+  id               String   @id @default(cuid())
+  bookingId        String
+  stripeInvoiceId  String?  @unique
+  amountCents      Int
+  currency         String   @default("usd")
+  status           String   // paid, failed, refunded
+  description      String?
+  invoicePdfUrl    String?
+  hostedInvoiceUrl String?
+  paidAt           DateTime?
+  createdAt        DateTime @default(now())
+
+  booking Booking @relation(fields: [bookingId], references: [id])
+
+  @@index([bookingId])
+  @@map("payment_records")
+}
+
+// ─── Contract Versioning ─────────────────────────────────
+
+model ContractVersion {
+  id           String   @id @default(cuid())
+  version      String   @unique // e.g. "1.0", "1.1"
+  contentHash  String   // SHA-256 of the contract text
+  terms        String   @db.Text // Full contract text
+  effectiveDate DateTime
+  createdAt    DateTime @default(now())
+
+  bookings Booking[]
+
+  @@map("contract_versions")
+}
+
+// ─── Assets (inventory) ──────────────────────────────────
+
+enum AssetType {
+  WASHER
+  DRYER
+}
+
+enum AssetStatus {
+  AVAILABLE
+  ASSIGNED
+  MAINTENANCE
+  RETIRED
+}
+
+enum AssetCondition {
+  NEW
+  GOOD
+  FAIR
+  POOR
+}
+
+model Asset {
+  id           String         @id @default(uuid())
+  type         AssetType
+  serialNumber String         @unique
+  model        String
+  condition    AssetCondition @default(NEW)
+  status       AssetStatus    @default(AVAILABLE)
+  notes        String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  assignments     Assignment[]
+  maintenanceLogs MaintenanceLog[]
+
+  @@index([status, type])
+  @@map("assets")
+}
+
+// ─── Assignments (asset ↔ booking) ───────────────────────
+
+model Assignment {
+  id          String    @id @default(uuid())
+  assetId     String
+  bookingId   String
+  installedAt DateTime?
+  removedAt   DateTime?
+  notes       String?
+  createdAt   DateTime  @default(now())
+
+  asset   Asset   @relation(fields: [assetId], references: [id])
+  booking Booking @relation(fields: [bookingId], references: [id])
+
+  @@index([assetId])
+  @@index([bookingId])
+  @@map("assignments")
+}
+
+// ─── Service Requests ────────────────────────────────────
+
+enum ServiceRequestStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum ServiceRequestPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+model ServiceRequest {
+  id          String                @id @default(uuid())
+  bookingId   String
+  status      ServiceRequestStatus  @default(OPEN)
+  priority    ServiceRequestPriority @default(MEDIUM)
+  title       String
+  description String                @db.Text
+  resolution  String?               @db.Text
+  resolvedAt  DateTime?
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+
+  @@index([bookingId])
+  @@index([status])
+  @@map("service_requests")
+}
+
+// ─── Maintenance Log ─────────────────────────────────────
+
+model MaintenanceLog {
+  id             String   @id @default(uuid())
+  assetId        String
+  technicianName String?
+  description    String   @db.Text
+  partsReplaced  String?
+  outcome        String?
+  cost           Int?     // cents
+  performedAt    DateTime
+  createdAt      DateTime @default(now())
+
+  asset Asset @relation(fields: [assetId], references: [id])
+
+  @@index([assetId])
+  @@map("maintenance_logs")
+}

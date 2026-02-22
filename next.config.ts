@@ -1,7 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // Stripe webhook needs raw body
+  experimental: {},
+  serverExternalPackages: ["pino", "pino-pretty", "bullmq", "ioredis"],
 };
 
 export default nextConfig;
