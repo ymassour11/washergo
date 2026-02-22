@@ -182,7 +182,7 @@ export default function StepDetails({ booking, onComplete, saving }: Props) {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
               <div>
                 <InputLabel>Email</InputLabel>
-                <input type="email" required value={form.customerEmail} onChange={(e) => update("customerEmail", e.target.value)} placeholder="JOHN@WASHGO.COM" className={inputClass} />
+                <input type="email" required value={form.customerEmail} onChange={(e) => update("customerEmail", e.target.value)} placeholder="JOHN@GOWASH.COM" className={inputClass} />
               </div>
               <div>
                 <InputLabel>Phone</InputLabel>
@@ -359,6 +359,11 @@ export default function StepDetails({ booking, onComplete, saving }: Props) {
 
         {/* Submit */}
         <div className="pt-4 md:pt-8">
+          {!selectedSlot && form.customerName && form.addressLine1 && (
+            <div className="mb-4 md:mb-6 bg-brutal-yellow p-3 md:p-4 border-2 md:border-3 border-black neo-brutal-shadow text-center">
+              <p className="text-[10px] md:text-xs font-black uppercase tracking-widest">Please select a delivery date & time above</p>
+            </div>
+          )}
           <button
             type="submit"
             disabled={isDisabled}
