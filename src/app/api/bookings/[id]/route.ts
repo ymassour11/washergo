@@ -5,7 +5,6 @@ import { checkRateLimit, BOOKING_UPDATE_LIMIT } from "@/lib/rate-limit";
 import { STEP_SCHEMAS } from "@/lib/validations";
 import { STEP_RULES, canTransition, isAtLeast } from "@/lib/booking-machine";
 import { PACKAGES, SLOT_HOLD_MINUTES, TERMS, getPricing } from "@/lib/config";
-import { slotReleaseQueue } from "@/lib/queue/client";
 import { logger } from "@/lib/logger";
 import { PackageType, TermType, Prisma } from "@prisma/client";
 
@@ -298,12 +297,8 @@ export async function PATCH(
           },
         );
 
-        // Schedule slot release
-        await slotReleaseQueue.add(
-          `release-${hold.id}`,
-          { slotHoldId: hold.id, bookingId: booking.id, slotId },
-          { delay: SLOT_HOLD_MINUTES * 60 * 1000 },
-        );
+        // Slot hold auto-expires via expiresAt — no queue needed on serverless
+        log.info({ holdId: hold.id, expiresAt: hold.expiresAt }, "Slot hold created");
 
         const newStatus = canTransition(booking.status, "SCHEDULED")
           ? "SCHEDULED"
