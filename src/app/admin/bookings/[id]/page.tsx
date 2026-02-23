@@ -30,6 +30,7 @@ interface BookingDetail {
   zip: string | null;
   monthlyPriceCents: number | null;
   setupFeeCents: number | null;
+  payAtDelivery: boolean;
   adminNotes: string | null;
   stripeCustomerId: string | null;
   stripeSubscriptionId: string | null;
@@ -237,6 +238,22 @@ export default function AdminBookingDetailPage() {
                 {booking.setupFeeCents != null ? formatCents(booking.setupFeeCents) : "--"}
               </div>
             </div>
+            <div>
+              <div className="text-xs text-[var(--text-muted)] mb-1">Payment Method</div>
+              {booking.payAtDelivery ? (
+                <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0H21M3.375 14.25V3.375c0-.621.504-1.125 1.125-1.125h9.75c.621 0 1.125.504 1.125 1.125v7.875" /></svg>
+                  Pay at Delivery
+                </span>
+              ) : ["PAID_SETUP", "CONTRACT_SIGNED", "ACTIVE", "PAST_DUE"].includes(booking.status) ? (
+                <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-bold bg-green-50 text-green-700 border border-green-200">
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" /></svg>
+                  Paid Online
+                </span>
+              ) : (
+                <span className="font-medium text-[var(--text-muted)]">--</span>
+              )}
+            </div>
             {booking.deliverySlot && (
               <div className="col-span-2">
                 <div className="text-xs text-[var(--text-muted)] mb-1">Delivery</div>
@@ -406,7 +423,7 @@ export default function AdminBookingDetailPage() {
           </div>
         )}
         <section className="flex flex-wrap gap-3">
-          {booking.status === "CONTRACT_SIGNED" && (
+          {["PAID_SETUP", "CONTRACT_SIGNED"].includes(booking.status) && (
             <button
               onClick={() => performAction("mark_active")}
               disabled={actionLoading}

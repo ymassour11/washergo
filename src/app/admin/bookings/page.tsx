@@ -14,6 +14,7 @@ interface Booking {
   state: string | null;
   monthlyPriceCents: number | null;
   adminNotes: string | null;
+  payAtDelivery: boolean;
   createdAt: string;
   customer: { name: string; email: string; phone: string } | null;
   deliverySlot: { date: string; windowLabel: string } | null;
@@ -285,6 +286,7 @@ export default function AdminBookingsPage() {
                   <th className="text-left px-5 py-3.5 text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">ID</th>
                   <th className="text-left px-5 py-3.5 text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">Customer</th>
                   <th className="text-left px-5 py-3.5 text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">Status</th>
+                  <th className="text-left px-5 py-3.5 text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">Payment</th>
                   <th className="text-left px-5 py-3.5 text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">Package</th>
                   <th className="text-left px-5 py-3.5 text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">Delivery</th>
                   <th className="text-left px-5 py-3.5 text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">Created</th>
@@ -319,6 +321,21 @@ export default function AdminBookingsPage() {
                     </td>
                     <td className="px-5 py-4"><StatusBadge status={b.status} /></td>
                     <td className="px-5 py-4">
+                      {b.payAtDelivery ? (
+                        <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0H21M3.375 14.25V3.375c0-.621.504-1.125 1.125-1.125h9.75c.621 0 1.125.504 1.125 1.125v7.875" /></svg>
+                          At Delivery
+                        </span>
+                      ) : ["PAID_SETUP", "CONTRACT_SIGNED", "ACTIVE", "PAST_DUE"].includes(b.status) ? (
+                        <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-bold bg-green-50 text-green-700 border border-green-200">
+                          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" /></svg>
+                          Paid Online
+                        </span>
+                      ) : (
+                        <span className="text-xs text-[var(--text-muted)]">--</span>
+                      )}
+                    </td>
+                    <td className="px-5 py-4">
                       {b.packageType ? (
                         <div>
                           <span className="text-[var(--text)]">{b.packageType.replace(/_/g, " ")}</span>
@@ -343,7 +360,7 @@ export default function AdminBookingsPage() {
                     <td className="px-5 py-4 text-xs text-[var(--text-muted)]">{formatDate(b.createdAt)}</td>
                     <td className="px-5 py-4">
                       <div className="flex justify-end gap-2">
-                        {b.status === "CONTRACT_SIGNED" && (
+                        {["PAID_SETUP", "CONTRACT_SIGNED"].includes(b.status) && (
                           <button
                             onClick={() => performAction(b.id, "mark_active")}
                             disabled={actionLoading === b.id}
@@ -414,6 +431,16 @@ export default function AdminBookingsPage() {
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 text-sm mb-4 pl-7">
+                  <div>
+                    <div className="text-xs text-[var(--text-muted)] mb-0.5">Payment</div>
+                    {b.payAtDelivery ? (
+                      <span className="inline-flex items-center gap-1 text-xs font-bold text-amber-700">At Delivery</span>
+                    ) : ["PAID_SETUP", "CONTRACT_SIGNED", "ACTIVE", "PAST_DUE"].includes(b.status) ? (
+                      <span className="inline-flex items-center gap-1 text-xs font-bold text-green-700">Paid Online</span>
+                    ) : (
+                      <span className="text-xs text-[var(--text-muted)]">--</span>
+                    )}
+                  </div>
                   {b.packageType && (
                     <div>
                       <div className="text-xs text-[var(--text-muted)] mb-0.5">Package</div>
@@ -437,7 +464,7 @@ export default function AdminBookingsPage() {
                 </div>
 
                 <div className="flex gap-2 pt-3 border-t border-[var(--border)] pl-7">
-                  {b.status === "CONTRACT_SIGNED" && (
+                  {["PAID_SETUP", "CONTRACT_SIGNED"].includes(b.status) && (
                     <button
                       onClick={() => performAction(b.id, "mark_active")}
                       disabled={actionLoading === b.id}
