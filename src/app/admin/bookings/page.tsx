@@ -35,6 +35,13 @@ function formatDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 
+function formatDateTime(dateStr: string): string {
+  const d = new Date(dateStr);
+  const date = d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  const time = d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+  return `${date}, ${time}`;
+}
+
 export default function AdminBookingsPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [pagination, setPagination] = useState<Pagination | null>(null);
@@ -357,7 +364,7 @@ export default function AdminBookingsPage() {
                         <span className="text-[var(--text-muted)]">--</span>
                       )}
                     </td>
-                    <td className="px-5 py-4 text-xs text-[var(--text-muted)]">{formatDate(b.createdAt)}</td>
+                    <td className="px-5 py-4 text-xs text-[var(--text-muted)]">{formatDateTime(b.createdAt)}</td>
                     <td className="px-5 py-4">
                       <div className="flex justify-end gap-2">
                         {["PAID_SETUP", "CONTRACT_SIGNED"].includes(b.status) && (
