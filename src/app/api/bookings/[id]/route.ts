@@ -317,12 +317,28 @@ export async function PATCH(
       }
 
       case 6: {
-        // Step 6 is payment via Stripe redirect — no data to save here
-        updated = await prisma.booking.update({
-          where: { id },
-          data: { currentStep: Math.max(booking.currentStep, 6) },
-          include: { customer: true, deliverySlot: true },
-        });
+        if (data.payAtDelivery === true) {
+          // Pay-at-delivery: skip Stripe, advance to confirmation
+          const newStatus = canTransition(booking.status, "PAID_SETUP")
+            ? "PAID_SETUP"
+            : booking.status;
+          updated = await prisma.booking.update({
+            where: { id },
+            data: {
+              payAtDelivery: true,
+              status: newStatus,
+              currentStep: 7,
+            },
+            include: { customer: true, deliverySlot: true },
+          });
+        } else {
+          // Online payment via Stripe redirect — no data to save here
+          updated = await prisma.booking.update({
+            where: { id },
+            data: { currentStep: Math.max(booking.currentStep, 6) },
+            include: { customer: true, deliverySlot: true },
+          });
+        }
         break;
       }
 

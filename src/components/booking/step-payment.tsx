@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "motion/react";
-import { ShieldCheck, CreditCard, Lock } from "lucide-react";
+import { ShieldCheck, CreditCard, Lock, Truck } from "lucide-react";
 import { TERMS } from "@/lib/config";
 import type { TermType } from "@prisma/client";
 
@@ -17,6 +17,7 @@ interface Props {
   bookingId: string;
   onBack: () => void;
   saving: boolean;
+  onPayAtDelivery: () => Promise<void>;
 }
 
 function formatCents(cents: number): string {
@@ -29,9 +30,10 @@ const PACKAGE_LABELS: Record<string, string> = {
   DRYER_ONLY: "Dryer Only",
 };
 
-export default function StepPayment({ booking, bookingId }: Props) {
+export default function StepPayment({ booking, bookingId, saving, onPayAtDelivery }: Props) {
   const [redirecting, setRedirecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [payAtDelivery, setPayAtDelivery] = useState(false);
 
   const termConfig = booking.termType ? TERMS[booking.termType as TermType] : null;
   const setupFee = booking.setupFeeCents ?? 0;
@@ -56,6 +58,17 @@ export default function StepPayment({ booking, bookingId }: Props) {
       window.location.href = data.sessionUrl;
     } catch {
       setError("Network error. Please try again.");
+      setRedirecting(false);
+    }
+  };
+
+  const handlePayAtDelivery = async () => {
+    setRedirecting(true);
+    setError(null);
+    try {
+      await onPayAtDelivery();
+    } catch {
+      setError("Something went wrong. Please try again.");
       setRedirecting(false);
     }
   };
@@ -116,13 +129,43 @@ export default function StepPayment({ booking, bookingId }: Props) {
             <span className="text-black">{monthlyPrice ? `${formatCents(monthlyPrice)}/mo` : "--"}</span>
           </div>
           <div className="flex justify-between items-center pt-4 md:pt-6">
-            <span className="text-xl md:text-2xl text-black font-black">Due today</span>
+            <span className="text-xl md:text-2xl text-black font-black">
+              {payAtDelivery ? "Due at delivery" : "Due today"}
+            </span>
             <span className="text-4xl md:text-6xl font-black tracking-tighter text-brutal-blue">
               {dueToday > 0 ? formatCents(dueToday) : "--"}
             </span>
           </div>
         </div>
       </div>
+
+      {/* Pay at Delivery Checkbox */}
+      <label className="flex items-start gap-4 bg-white p-5 md:p-6 border-3 md:border-4 border-black neo-brutal-shadow mb-8 md:mb-12 cursor-pointer select-none group hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[8px_8px_0px_0px_#000] transition-all">
+        <div className="relative mt-0.5">
+          <input
+            type="checkbox"
+            checked={payAtDelivery}
+            onChange={(e) => setPayAtDelivery(e.target.checked)}
+            className="sr-only peer"
+          />
+          <div className="w-6 h-6 md:w-7 md:h-7 border-3 border-black bg-white peer-checked:bg-brutal-yellow transition-colors flex items-center justify-center">
+            {payAtDelivery && (
+              <svg className="w-4 h-4 md:w-5 md:h-5 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            )}
+          </div>
+        </div>
+        <div className="flex-1">
+          <div className="flex items-center gap-2 md:gap-3">
+            <Truck className="w-5 h-5 md:w-6 md:h-6 text-brutal-blue stroke-[3]" />
+            <span className="font-black text-sm md:text-base uppercase tracking-tight">Pay at delivery</span>
+          </div>
+          <p className="text-[10px] md:text-xs font-bold uppercase tracking-tight text-gray-400 mt-1.5 md:mt-2 leading-relaxed">
+            Skip online payment. Pay when we deliver your equipment.
+          </p>
+        </div>
+      </label>
 
       {error && (
         <div className="bg-brutal-pink text-black border-3 md:border-4 border-black p-4 md:p-6 font-black uppercase tracking-tight text-xs md:text-sm mb-8 md:mb-12 flex items-center gap-3 md:gap-4 neo-brutal-shadow">
@@ -131,22 +174,35 @@ export default function StepPayment({ booking, bookingId }: Props) {
         </div>
       )}
 
-      <button
-        onClick={handlePay}
-        disabled={redirecting}
-        className="w-full bg-brutal-blue hover:bg-black disabled:bg-gray-300 text-white border-3 md:border-4 border-black py-4 md:py-6 font-black text-lg md:text-2xl uppercase tracking-widest transition-all neo-brutal-shadow-lg hover:translate-x-[-2px] hover:translate-y-[-2px] md:hover:translate-x-[-4px] md:hover:translate-y-[-4px] md:hover:shadow-[12px_12px_0px_0px_#000]"
-      >
-        {redirecting ? "Redirecting..." : "Pay & Subscribe"}
-        {!redirecting && <Lock className="w-5 h-5 md:w-6 md:h-6 ml-2 stroke-[3]" />}
-      </button>
+      {payAtDelivery ? (
+        <button
+          onClick={handlePayAtDelivery}
+          disabled={redirecting || saving}
+          className="w-full bg-brutal-green hover:bg-black disabled:bg-gray-300 text-black hover:text-white border-3 md:border-4 border-black py-4 md:py-6 font-black text-lg md:text-2xl uppercase tracking-widest transition-all neo-brutal-shadow-lg hover:translate-x-[-2px] hover:translate-y-[-2px] md:hover:translate-x-[-4px] md:hover:translate-y-[-4px] md:hover:shadow-[12px_12px_0px_0px_#000]"
+        >
+          {redirecting || saving ? "Confirming..." : "Confirm Booking"}
+          {!redirecting && !saving && <Truck className="w-5 h-5 md:w-6 md:h-6 ml-2 stroke-[3] inline" />}
+        </button>
+      ) : (
+        <button
+          onClick={handlePay}
+          disabled={redirecting}
+          className="w-full bg-brutal-blue hover:bg-black disabled:bg-gray-300 text-white border-3 md:border-4 border-black py-4 md:py-6 font-black text-lg md:text-2xl uppercase tracking-widest transition-all neo-brutal-shadow-lg hover:translate-x-[-2px] hover:translate-y-[-2px] md:hover:translate-x-[-4px] md:hover:translate-y-[-4px] md:hover:shadow-[12px_12px_0px_0px_#000]"
+        >
+          {redirecting ? "Redirecting..." : "Pay & Subscribe"}
+          {!redirecting && <Lock className="w-5 h-5 md:w-6 md:h-6 ml-2 stroke-[3] inline" />}
+        </button>
+      )}
 
       <div className="mt-8 md:mt-12 flex flex-wrap items-center justify-center gap-x-6 md:gap-x-12 gap-y-3 md:gap-y-4 text-[8px] md:text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">
         <span className="flex items-center gap-1.5 md:gap-2">
           <ShieldCheck className="w-4 h-4 md:w-5 md:h-5 text-brutal-green stroke-[3]" /> Secure checkout
         </span>
-        <span className="flex items-center gap-1.5 md:gap-2">
-          <Lock className="w-4 h-4 md:w-5 md:h-5 text-gray-400 stroke-[3]" /> Powered by Stripe
-        </span>
+        {!payAtDelivery && (
+          <span className="flex items-center gap-1.5 md:gap-2">
+            <Lock className="w-4 h-4 md:w-5 md:h-5 text-gray-400 stroke-[3]" /> Powered by Stripe
+          </span>
+        )}
       </div>
     </motion.div>
   );

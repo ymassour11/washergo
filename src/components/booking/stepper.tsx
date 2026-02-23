@@ -44,6 +44,7 @@ interface BookingData {
   hasDrainAccess?: boolean;
   deliverySlotId?: string;
   deliverySlot?: { date: string; windowLabel: string } | null;
+  payAtDelivery?: boolean;
   stripeCustomerId?: string;
   contractSignedAt?: string;
   contractSignerName?: string;
@@ -321,6 +322,10 @@ export default function Stepper({ bookingId, initialStep, canceled }: StepperPro
                 bookingId={bookingId}
                 onBack={goBack}
                 saving={saving}
+                onPayAtDelivery={async () => {
+                  const success = await saveStep(6, { payAtDelivery: true });
+                  if (success) goToStep("success");
+                }}
               />
             )}
             {uiStep === "success" && (

@@ -15,6 +15,7 @@ interface Props {
     customer?: { name: string; email: string } | null;
     monthlyPriceCents?: number;
     setupFeeCents?: number;
+    payAtDelivery?: boolean;
   };
 }
 
@@ -55,11 +56,23 @@ export default function StepConfirmation({ booking }: Props) {
         <span className="text-brutal-blue">All Set!</span>
       </h2>
       <p className="text-base md:text-xl font-black uppercase tracking-tight text-black mb-8 md:mb-12 max-w-md">
-        Order confirmed.
+        {booking.payAtDelivery ? "Booking confirmed." : "Order confirmed."}
         {booking.customer?.name && (
           <> Welcome, <span className="text-brutal-blue">{booking.customer.name}</span>!</>
         )}
       </p>
+
+      {booking.payAtDelivery && (
+        <div className="bg-brutal-yellow border-3 md:border-4 border-black p-4 md:p-6 neo-brutal-shadow w-full max-w-lg mb-8 md:mb-12 text-left">
+          <div className="flex items-center gap-3 mb-2">
+            <CreditCard className="w-5 h-5 md:w-6 md:h-6 text-black stroke-[3]" />
+            <span className="font-black text-sm md:text-base uppercase tracking-tight">Payment due at delivery</span>
+          </div>
+          <p className="text-[10px] md:text-xs font-bold uppercase tracking-tight text-black/60 leading-relaxed">
+            Our team will collect payment when your equipment is delivered and installed.
+          </p>
+        </div>
+      )}
 
       <div className="bg-white p-6 md:p-10 border-3 md:border-4 border-black neo-brutal-shadow-lg w-full max-w-lg mb-8 md:mb-12 text-left relative overflow-hidden">
         <div className="absolute top-0 left-0 w-full h-2 md:h-4 bg-brutal-blue border-b-2 md:border-b-4 border-black"></div>

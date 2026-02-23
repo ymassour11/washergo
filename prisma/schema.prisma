@@ -129,7 +129,8 @@ model Booking {
   // ── Step 5: Delivery ──
   deliverySlotId String?
 
-  // ── Step 6: Stripe ──
+  // ── Step 6: Payment ──
+  payAtDelivery        Boolean  @default(false)
   stripeCustomerId     String?
   stripeSubscriptionId String?
   stripeCheckoutSessionId String?
