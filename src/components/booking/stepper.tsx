@@ -195,7 +195,7 @@ export default function Stepper({ bookingId, initialStep, canceled }: StepperPro
           <div className="mb-6 md:mb-12 flex items-center justify-between md:block">
             <div>
               <h1 className="text-2xl md:text-4xl font-black tracking-tighter uppercase leading-none">
-                Wash<span className="text-brutal-blue">Go</span>
+                Go<span className="text-brutal-blue">Wash</span>
               </h1>
               <p className="text-[8px] md:text-[10px] font-bold uppercase tracking-[0.2em] mt-1 md:mt-2 text-gray-500">Premium Subscription</p>
             </div>
@@ -256,7 +256,7 @@ export default function Stepper({ bookingId, initialStep, canceled }: StepperPro
         <div className="hidden md:block pt-12 border-t-2 border-black mt-12">
           <div className="bg-brutal-pink p-4 border-3 border-black neo-brutal-shadow">
             <p className="text-[10px] font-black uppercase leading-tight">Need Help?</p>
-            <a href="mailto:support@washgo.com" className="text-xs font-black uppercase underline mt-1 block">Contact Support</a>
+            <a href="mailto:support@gowash.com" className="text-xs font-black uppercase underline mt-1 block">Contact Support</a>
           </div>
         </div>
       </aside>

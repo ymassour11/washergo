@@ -18,7 +18,7 @@ import { logger } from "@/lib/logger";
 export async function POST(req: NextRequest) {
   const log = logger.child({ route: "POST /api/stripe/webhook" });
 
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET?.trim();
   if (!webhookSecret) {
     log.error("STRIPE_WEBHOOK_SECRET not configured");
     return NextResponse.json({ error: "Server configuration error" }, { status: 500 });

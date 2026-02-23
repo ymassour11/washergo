@@ -67,9 +67,9 @@ export async function POST(req: NextRequest) {
   }
 
   const pricing = getPricing(booking.packageType, booking.termType as TermType);
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").trim();
 
-  const monthlyPriceId = process.env[pricing.stripeMonthlyPriceIdEnvKey];
+  const monthlyPriceId = process.env[pricing.stripeMonthlyPriceIdEnvKey]?.trim();
   if (!monthlyPriceId) {
     log.error({ envKey: pricing.stripeMonthlyPriceIdEnvKey }, "Monthly Stripe price ID not configured");
     return NextResponse.json(
@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
   ];
 
   if (pricing.setupFeeCents > 0 && pricing.stripeSetupPriceIdEnvKey) {
-    const setupPriceId = process.env[pricing.stripeSetupPriceIdEnvKey];
+    const setupPriceId = process.env[pricing.stripeSetupPriceIdEnvKey]?.trim();
     if (!setupPriceId) {
       log.error({ envKey: pricing.stripeSetupPriceIdEnvKey }, "Setup fee Stripe price ID not configured");
       return NextResponse.json(

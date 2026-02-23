@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "WashGo | Washer & Dryer Rentals",
+  title: "GoWash | Washer & Dryer Rentals",
   description:
     "Premium washer and dryer rentals, delivered and installed. Starting at $49/mo with free repairs. Skip the laundromat forever.",
 };

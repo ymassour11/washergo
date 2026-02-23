@@ -178,3 +178,61 @@ export async function PATCH(
     return NextResponse.json({ error: "Failed to update booking" }, { status: 500 });
   }
 }
+
+/**
+ * DELETE /api/admin/bookings/[id]
+ *
+ * Permanently delete a booking. Only allowed for CANCELED or CLOSED bookings.
+ * Deletes related slot holds and payment records in a transaction.
+ * Audit-logged.
+ */
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const { id } = await params;
+  const log = logger.child({ route: `DELETE /api/admin/bookings/${id}` });
+
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const booking = await prisma.booking.findUnique({ where: { id } });
+  if (!booking) {
+    return NextResponse.json({ error: "Booking not found" }, { status: 404 });
+  }
+
+  if (!["CANCELED", "CLOSED"].includes(booking.status)) {
+    return NextResponse.json(
+      { error: "Only CANCELED or CLOSED bookings can be deleted" },
+      { status: 409 },
+    );
+  }
+
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+
+  try {
+    await prisma.$transaction([
+      prisma.slotHold.deleteMany({ where: { bookingId: id } }),
+      prisma.paymentRecord.deleteMany({ where: { bookingId: id } }),
+      prisma.assignment.deleteMany({ where: { bookingId: id } }),
+      prisma.booking.delete({ where: { id } }),
+      prisma.auditLog.create({
+        data: {
+          userId: session.user.id,
+          action: "booking.delete",
+          targetId: id,
+          details: { status: booking.status, customerId: booking.customerId },
+          ip,
+        },
+      }),
+    ]);
+
+    log.info({ bookingId: id, userId: session.user.id }, "Booking deleted");
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    log.error({ error }, "Failed to delete booking");
+    return NextResponse.json({ error: "Failed to delete booking" }, { status: 500 });
+  }
+}

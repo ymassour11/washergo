@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { StatusBadge } from "@/components/admin/status-badge";
 
 interface PaymentRecord {
   id: string;
@@ -38,28 +39,12 @@ interface BookingDetail {
   paymentRecords: PaymentRecord[];
 }
 
-const STATUS_CONFIG: Record<string, { bg: string; dot: string; text: string }> = {
-  DRAFT:            { bg: "bg-stone-100",  dot: "bg-stone-400",  text: "text-stone-600" },
-  QUALIFIED:        { bg: "bg-sky-50",     dot: "bg-sky-500",    text: "text-sky-700" },
-  SCHEDULED:        { bg: "bg-blue-50",    dot: "bg-blue-500",   text: "text-blue-700" },
-  PAID_SETUP:       { bg: "bg-violet-50",  dot: "bg-violet-500", text: "text-violet-700" },
-  CONTRACT_SIGNED:  { bg: "bg-teal-50",    dot: "bg-teal-500",   text: "text-teal-700" },
-  ACTIVE:           { bg: "bg-green-50",   dot: "bg-green-500",  text: "text-green-700" },
-  PAST_DUE:         { bg: "bg-red-50",     dot: "bg-red-500",    text: "text-red-700" },
-  CANCELED:         { bg: "bg-stone-50",   dot: "bg-stone-400",  text: "text-stone-500" },
-  CLOSED:           { bg: "bg-stone-100",  dot: "bg-stone-400",  text: "text-stone-600" },
-};
-
 function formatCents(cents: number): string {
   return `$${(cents / 100).toFixed(2)}`;
 }
 
 function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
+  return new Date(dateStr).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 
 function isStripeUrl(url: string): boolean {
@@ -71,16 +56,6 @@ function isStripeUrl(url: string): boolean {
   }
 }
 
-function StatusBadge({ status }: { status: string }) {
-  const config = STATUS_CONFIG[status] || STATUS_CONFIG.DRAFT;
-  return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full ${config.bg} px-2.5 py-1 text-xs font-bold ${config.text}`}>
-      <span className={`w-1.5 h-1.5 rounded-full ${config.dot}`} />
-      {status.replace(/_/g, " ")}
-    </span>
-  );
-}
-
 export default function AdminBookingDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
@@ -88,6 +63,9 @@ export default function AdminBookingDetailPage() {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [editingNotes, setEditingNotes] = useState(false);
+  const [notesValue, setNotesValue] = useState("");
+  const [savingNotes, setSavingNotes] = useState(false);
 
   const fetchBooking = useCallback(async () => {
     setLoading(true);
@@ -130,59 +108,88 @@ export default function AdminBookingDetailPage() {
     }
   };
 
+  const deleteBooking = async () => {
+    setActionLoading(true);
+    setActionError(null);
+    try {
+      const res = await fetch(`/api/admin/bookings/${id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setActionError(data.error || "Delete failed");
+        return;
+      }
+      router.push("/admin/bookings");
+    } catch {
+      setActionError("Network error");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const saveNotes = async () => {
+    setSavingNotes(true);
+    try {
+      await fetch(`/api/admin/bookings/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "update_notes", notes: notesValue }),
+      });
+      setEditingNotes(false);
+      await fetchBooking();
+    } finally {
+      setSavingNotes(false);
+    }
+  };
+
   if (loading) {
     return (
-      <main className="min-h-screen bg-[var(--background)]">
-        <div className="mx-auto max-w-4xl px-6 py-12">
-          <div className="space-y-6">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="rounded-xl border border-[var(--border)] bg-white p-6">
-                <div className="h-4 w-32 rounded animate-shimmer mb-4" />
-                <div className="h-4 w-full rounded animate-shimmer" />
-              </div>
-            ))}
-          </div>
+      <div className="p-6 lg:p-8">
+        <div className="max-w-4xl space-y-6">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="rounded-xl border border-[var(--border)] bg-white p-6">
+              <div className="h-4 w-32 rounded animate-shimmer mb-4" />
+              <div className="h-4 w-full rounded animate-shimmer" />
+            </div>
+          ))}
         </div>
-      </main>
+      </div>
     );
   }
 
   if (!booking) {
     return (
-      <main className="min-h-screen bg-[var(--background)] flex items-center justify-center">
+      <div className="p-6 lg:p-8 flex items-center justify-center min-h-[50vh]">
         <div className="text-center">
           <p className="text-[var(--text-secondary)] font-medium">Booking not found</p>
           <button onClick={() => router.push("/admin/bookings")} className="mt-4 text-sm text-[var(--primary)] hover:underline">
             Back to bookings
           </button>
         </div>
-      </main>
+      </div>
     );
   }
 
   return (
-    <main className="min-h-screen bg-[var(--background)]">
-      {/* Header */}
-      <header className="sticky top-0 z-20 border-b border-[var(--border)] bg-white/80 backdrop-blur-md">
-        <div className="mx-auto max-w-4xl px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => router.push("/admin/bookings")}
-              className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--text-muted)] hover:text-[var(--text)] transition-colors"
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-              </svg>
-              Bookings
-            </button>
-            <span className="text-[var(--text-muted)]">/</span>
-            <code className="text-sm font-mono text-[var(--text-secondary)]">{booking.id.slice(0, 8)}</code>
-          </div>
-          <StatusBadge status={booking.status} />
+    <div className="p-6 lg:p-8">
+      {/* Breadcrumb + Status */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => router.push("/admin/bookings")}
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--text-muted)] hover:text-[var(--text)] transition-colors"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            </svg>
+            Bookings
+          </button>
+          <span className="text-[var(--text-muted)]">/</span>
+          <code className="text-sm font-mono text-[var(--text-secondary)]">{booking.id.slice(0, 8)}</code>
         </div>
-      </header>
+        <StatusBadge status={booking.status} />
+      </div>
 
-      <div className="mx-auto max-w-4xl px-6 py-6 space-y-6">
+      <div className="max-w-4xl space-y-6">
         {/* Customer Info */}
         <section className="rounded-xl border border-[var(--border)] bg-white p-6">
           <h2 className="text-sm font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-4">Customer</h2>
@@ -281,15 +288,11 @@ export default function AdminBookingDetailPage() {
                       <td className="py-3 pr-4 text-[var(--text)]">
                         {pr.paidAt ? formatDate(pr.paidAt) : formatDate(pr.createdAt)}
                       </td>
-                      <td className="py-3 pr-4 font-medium text-[var(--text)]">
-                        {formatCents(pr.amountCents)}
-                      </td>
+                      <td className="py-3 pr-4 font-medium text-[var(--text)]">{formatCents(pr.amountCents)}</td>
                       <td className="py-3 pr-4">
                         <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-bold ${
-                          pr.status === "paid"
-                            ? "bg-green-50 text-green-700"
-                            : pr.status === "failed"
-                            ? "bg-red-50 text-red-700"
+                          pr.status === "paid" ? "bg-green-50 text-green-700"
+                            : pr.status === "failed" ? "bg-red-50 text-red-700"
                             : "bg-stone-100 text-stone-600"
                         }`}>
                           {pr.status}
@@ -298,12 +301,7 @@ export default function AdminBookingDetailPage() {
                       <td className="py-3 pr-4">
                         <div className="flex items-center gap-2">
                           {pr.invoicePdfUrl && isStripeUrl(pr.invoicePdfUrl) && (
-                            <a
-                              href={pr.invoicePdfUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 text-xs font-medium text-[var(--primary)] hover:underline"
-                            >
+                            <a href={pr.invoicePdfUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs font-medium text-[var(--primary)] hover:underline">
                               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
                               </svg>
@@ -311,12 +309,7 @@ export default function AdminBookingDetailPage() {
                             </a>
                           )}
                           {pr.hostedInvoiceUrl && isStripeUrl(pr.hostedInvoiceUrl) && (
-                            <a
-                              href={pr.hostedInvoiceUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text)] hover:underline"
-                            >
+                            <a href={pr.hostedInvoiceUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text)] hover:underline">
                               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
                               </svg>
@@ -361,13 +354,50 @@ export default function AdminBookingDetailPage() {
           </section>
         )}
 
-        {/* Admin Notes */}
-        {booking.adminNotes && (
-          <section className="rounded-xl border border-[var(--border)] bg-white p-6">
-            <h2 className="text-sm font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-4">Admin Notes</h2>
-            <p className="text-sm text-[var(--text)]">{booking.adminNotes}</p>
-          </section>
-        )}
+        {/* Admin Notes (editable) */}
+        <section className="rounded-xl border border-[var(--border)] bg-white p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm font-semibold text-[var(--text-muted)] uppercase tracking-wider">Admin Notes</h2>
+            {!editingNotes && (
+              <button
+                onClick={() => { setNotesValue(booking.adminNotes || ""); setEditingNotes(true); }}
+                className="text-xs font-medium text-[var(--primary)] hover:underline"
+              >
+                {booking.adminNotes ? "Edit" : "Add notes"}
+              </button>
+            )}
+          </div>
+          {editingNotes ? (
+            <div>
+              <textarea
+                value={notesValue}
+                onChange={(e) => setNotesValue(e.target.value)}
+                rows={4}
+                className="w-full rounded-xl border border-[var(--border)] bg-white px-4 py-3 text-sm text-[var(--text)] placeholder:text-[var(--text-muted)] focus-ring resize-none"
+                placeholder="Add internal notes about this booking..."
+              />
+              <div className="flex gap-2 mt-3">
+                <button
+                  onClick={saveNotes}
+                  disabled={savingNotes}
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--primary)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--primary-dark)] disabled:opacity-50 transition-colors"
+                >
+                  {savingNotes ? "Saving..." : "Save"}
+                </button>
+                <button
+                  onClick={() => setEditingNotes(false)}
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--border)] bg-white px-4 py-2 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-raised)] transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : booking.adminNotes ? (
+            <p className="text-sm text-[var(--text)] whitespace-pre-wrap">{booking.adminNotes}</p>
+          ) : (
+            <p className="text-sm text-[var(--text-muted)]">No notes yet.</p>
+          )}
+        </section>
 
         {/* Actions */}
         {actionError && (
@@ -409,8 +439,20 @@ export default function AdminBookingDetailPage() {
               Cancel Booking
             </button>
           )}
+          {["CANCELED", "CLOSED"].includes(booking.status) && (
+            <button
+              onClick={() => { if (confirm("Permanently delete this booking? This cannot be undone.")) deleteBooking(); }}
+              disabled={actionLoading}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-semibold text-red-700 hover:bg-red-100 disabled:opacity-50 transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+              </svg>
+              Delete Booking
+            </button>
+          )}
         </section>
       </div>
-    </main>
+    </div>
   );
 }

@@ -42,7 +42,7 @@ export default function BookPage() {
     <div className="min-h-screen bg-white text-black font-mono flex flex-col overflow-x-hidden">
       {/* Navigation */}
       <nav className="flex items-center justify-between px-6 py-4 border-b-4 border-black bg-white sticky top-0 z-50">
-        <div className="text-3xl font-sans font-bold tracking-tighter uppercase">WashGo</div>
+        <div className="text-3xl font-sans font-bold tracking-tighter uppercase">GoWash</div>
         <div className="flex items-center gap-6 text-sm font-bold uppercase">
           <button
             onClick={startBooking}
@@ -83,7 +83,7 @@ export default function BookPage() {
                     className="text-[20vw] lg:text-[12rem] font-sans font-black leading-[0.8] tracking-tighter lowercase mb-6 lg:mb-8 text-[#F2F0E6]"
                     style={{ textShadow: "4px 4px 0px #000, 8px 8px 0px #000" }}
                   >
-                    washgo
+                    gowash
                   </h1>
                   <motion.div
                     initial={{ opacity: 0, x: -50, rotate: -2 }}
@@ -280,7 +280,7 @@ export default function BookPage() {
                 <div className="absolute top-0 right-0 w-32 h-32 bg-white rounded-bl-full opacity-20"></div>
                 <div className="relative z-10">
                   <div className="text-sm font-bold uppercase text-white mb-4 tracking-wider">The Solution</div>
-                  <h3 className="text-5xl font-sans font-bold text-white mb-8">WashGo</h3>
+                  <h3 className="text-5xl font-sans font-bold text-white mb-8">GoWash</h3>
                   <div className="text-3xl font-sans font-bold text-white mb-2">$59</div>
                   <div className="text-sm font-bold uppercase text-white/80 mb-10">From / Month (12mo plan)</div>
                   <ul className="space-y-6 text-base font-medium">
@@ -307,7 +307,7 @@ export default function BookPage() {
             className="relative z-10 flex flex-col items-center"
           >
             <h2 className="text-4xl md:text-6xl lg:text-7xl font-sans font-bold uppercase max-w-6xl leading-[1.1] mb-16 tracking-tighter">
-              &ldquo;I built WashGo because I got tired of lugging quarters to the laundromat. Laundry should be easy.&rdquo;
+              &ldquo;I built GoWash because I got tired of lugging quarters to the laundromat. Laundry should be easy.&rdquo;
             </h2>
             <div className="border-4 border-white px-8 py-3 font-bold uppercase tracking-widest text-lg brutal-shadow-white bg-[#0055FF]">
               - Founder
@@ -340,7 +340,7 @@ export default function BookPage() {
 
         {/* Footer */}
         <footer className="bg-white p-8 md:p-12 flex flex-col md:flex-row justify-between items-center gap-6">
-          <div className="text-4xl font-sans font-bold tracking-tighter uppercase">WashGo.</div>
+          <div className="text-4xl font-sans font-bold tracking-tighter uppercase">GoWash.</div>
           <div className="flex gap-8 text-base font-bold uppercase">
             <a href="#" className="hover:text-[#0055FF] hover:underline underline-offset-4">Terms</a>
             <a href="#" className="hover:text-[#0055FF] hover:underline underline-offset-4">Privacy</a>
