@@ -12,7 +12,7 @@ const TRANSITIONS: Record<BookingStatus, BookingStatus[]> = {
   DRAFT: ["QUALIFIED", "CANCELED"],
   QUALIFIED: ["SCHEDULED", "CANCELED"],
   SCHEDULED: ["PAID_SETUP", "CANCELED"],
-  PAID_SETUP: ["CONTRACT_SIGNED", "CANCELED"],
+  PAID_SETUP: ["ACTIVE", "CANCELED"],
   CONTRACT_SIGNED: ["ACTIVE", "CANCELED"],
   ACTIVE: ["PAST_DUE", "CLOSED", "CANCELED"],
   PAST_DUE: ["ACTIVE", "CANCELED", "CLOSED"],
@@ -55,9 +55,8 @@ export const STEP_RULES: Record<number, StepRule> = {
   3: { requiredStatus: "QUALIFIED", completesTo: "QUALIFIED" },
   4: { requiredStatus: "QUALIFIED", completesTo: "QUALIFIED" },
   5: { requiredStatus: "QUALIFIED", completesTo: "SCHEDULED" },
-  6: { requiredStatus: "SCHEDULED", completesTo: "SCHEDULED" }, // Payment advances via webhook
-  7: { requiredStatus: "PAID_SETUP", completesTo: "CONTRACT_SIGNED" },
-  8: { requiredStatus: "CONTRACT_SIGNED", completesTo: "CONTRACT_SIGNED" },
+  6: { requiredStatus: "SCHEDULED", completesTo: "SCHEDULED" }, // Payment via Stripe redirect; webhook advances to PAID_SETUP
+  7: { requiredStatus: "PAID_SETUP", completesTo: "PAID_SETUP" }, // Confirmation (view-only)
 };
 
 /**
@@ -94,10 +93,9 @@ export function maxStepForStatus(status: BookingStatus): number {
     case "SCHEDULED":
       return 6;
     case "PAID_SETUP":
-      return 7;
     case "CONTRACT_SIGNED":
     case "ACTIVE":
-      return 8;
+      return 7;
     default:
       return 0; // CANCELED, CLOSED, PAST_DUE
   }

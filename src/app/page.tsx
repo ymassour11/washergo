@@ -342,8 +342,8 @@ export default function HomePage() {
         <footer className="bg-white p-8 md:p-12 flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="text-4xl font-sans font-bold tracking-tighter uppercase">GoWash.</div>
           <div className="flex gap-8 text-base font-bold uppercase">
-            <a href="#" className="hover:text-[#0055FF] hover:underline underline-offset-4">Terms</a>
-            <a href="#" className="hover:text-[#0055FF] hover:underline underline-offset-4">Privacy</a>
+            <a href="/terms" className="hover:text-[#0055FF] hover:underline underline-offset-4">Terms</a>
+            <a href="/privacy" className="hover:text-[#0055FF] hover:underline underline-offset-4">Privacy</a>
           </div>
         </footer>
       </main>

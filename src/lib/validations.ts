@@ -54,17 +54,6 @@ export const step5Schema = z.object({
   deliverySlotId: z.string().uuid("Please select a delivery window"),
 });
 
-// ── Step 6: Payment ──────────────────────────────────────
-export const step6Schema = z.object({
-  authorizeRecurring: z.literal(true, "You must authorize recurring charges"),
-});
-
-// ── Step 7: Contract ─────────────────────────────────────
-export const step7Schema = z.object({
-  contractAccepted: z.literal(true, "You must accept the rental agreement"),
-  signerName: z.string().min(2, "Please type your full name"),
-});
-
 // ── Per-step schema map ──────────────────────────────────
 export const STEP_SCHEMAS: Record<number, z.ZodSchema> = {
   1: step1Schema,
@@ -72,8 +61,6 @@ export const STEP_SCHEMAS: Record<number, z.ZodSchema> = {
   3: step3Schema,
   4: step4Schema,
   5: step5Schema,
-  6: step6Schema,
-  7: step7Schema,
 };
 
 export type Step1Data = z.infer<typeof step1Schema>;
@@ -81,5 +68,3 @@ export type Step2Data = z.infer<typeof step2Schema>;
 export type Step3Data = z.infer<typeof step3Schema>;
 export type Step4Data = z.infer<typeof step4Schema>;
 export type Step5Data = z.infer<typeof step5Schema>;
-export type Step6Data = z.infer<typeof step6Schema>;
-export type Step7Data = z.infer<typeof step7Schema>;

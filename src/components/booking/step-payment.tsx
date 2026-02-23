@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "motion/react";
-import { ShieldCheck, CreditCard, Lock, Check } from "lucide-react";
+import { ShieldCheck, CreditCard, Lock } from "lucide-react";
 import { TERMS } from "@/lib/config";
 import type { TermType } from "@prisma/client";
 
@@ -30,7 +30,6 @@ const PACKAGE_LABELS: Record<string, string> = {
 };
 
 export default function StepPayment({ booking, bookingId }: Props) {
-  const [authorized, setAuthorized] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -125,29 +124,6 @@ export default function StepPayment({ booking, bookingId }: Props) {
         </div>
       </div>
 
-      {/* Authorization */}
-      <label
-        className={`group flex items-start gap-4 md:gap-6 p-6 md:p-8 border-3 md:border-4 border-black cursor-pointer transition-all duration-200 mb-8 md:mb-12 ${
-          authorized ? "bg-brutal-yellow neo-brutal-shadow-lg translate-x-[-2px] translate-y-[-2px] md:translate-x-[-4px] md:translate-y-[-4px]" : "bg-white neo-brutal-shadow hover:translate-x-[-1px] hover:translate-y-[-1px] md:hover:translate-x-[-2px] md:hover:translate-y-[-2px]"
-        }`}
-      >
-        <div className={`mt-0.5 md:mt-1 w-6 h-6 md:w-8 md:h-8 border-2 md:border-3 border-black flex items-center justify-center shrink-0 transition-colors ${
-          authorized ? "bg-black text-white" : "bg-white text-transparent group-hover:bg-gray-100"
-        }`}>
-          <Check className="w-4 h-4 md:w-5 md:h-5 stroke-[4]" />
-        </div>
-        <input type="checkbox" checked={authorized} onChange={(e) => setAuthorized(e.target.checked)} className="sr-only" />
-        <div>
-          <span className="font-black text-lg md:text-xl uppercase tracking-tighter block">I authorize recurring charges</span>
-          <p className={`text-[10px] md:text-xs font-bold uppercase tracking-tight mt-1.5 md:mt-2 leading-relaxed ${authorized ? "text-black/70" : "text-gray-500"}`}>
-            My card will be charged {monthlyPrice ? formatCents(monthlyPrice) : "--"}/month until I cancel.
-            {booking.minimumTermMonths && booking.minimumTermMonths > 1
-              ? ` Minimum term: ${booking.minimumTermMonths} months.`
-              : ""}
-          </p>
-        </div>
-      </label>
-
       {error && (
         <div className="bg-brutal-pink text-black border-3 md:border-4 border-black p-4 md:p-6 font-black uppercase tracking-tight text-xs md:text-sm mb-8 md:mb-12 flex items-center gap-3 md:gap-4 neo-brutal-shadow">
            <svg className="w-6 h-6 md:w-8 md:h-8 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
@@ -157,7 +133,7 @@ export default function StepPayment({ booking, bookingId }: Props) {
 
       <button
         onClick={handlePay}
-        disabled={!authorized || redirecting}
+        disabled={redirecting}
         className="w-full bg-brutal-blue hover:bg-black disabled:bg-gray-300 text-white border-3 md:border-4 border-black py-4 md:py-6 font-black text-lg md:text-2xl uppercase tracking-widest transition-all neo-brutal-shadow-lg hover:translate-x-[-2px] hover:translate-y-[-2px] md:hover:translate-x-[-4px] md:hover:translate-y-[-4px] md:hover:shadow-[12px_12px_0px_0px_#000]"
       >
         {redirecting ? "Redirecting..." : "Pay & Subscribe"}

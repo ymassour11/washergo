@@ -5,8 +5,6 @@ import {
   step3Schema,
   step4Schema,
   step5Schema,
-  step6Schema,
-  step7Schema,
 } from "@/lib/validations";
 
 describe("step1Schema (Eligibility)", () => {
@@ -139,38 +137,3 @@ describe("step5Schema (Delivery)", () => {
   });
 });
 
-describe("step6Schema (Payment consent)", () => {
-  it("accepts authorized", () => {
-    expect(step6Schema.safeParse({ authorizeRecurring: true }).success).toBe(true);
-  });
-
-  it("rejects not authorized", () => {
-    expect(step6Schema.safeParse({ authorizeRecurring: false }).success).toBe(false);
-  });
-});
-
-describe("step7Schema (Contract)", () => {
-  it("accepts valid signature", () => {
-    const result = step7Schema.safeParse({
-      contractAccepted: true,
-      signerName: "Jane Doe",
-    });
-    expect(result.success).toBe(true);
-  });
-
-  it("rejects not accepted", () => {
-    const result = step7Schema.safeParse({
-      contractAccepted: false,
-      signerName: "Jane Doe",
-    });
-    expect(result.success).toBe(false);
-  });
-
-  it("rejects short name", () => {
-    const result = step7Schema.safeParse({
-      contractAccepted: true,
-      signerName: "J",
-    });
-    expect(result.success).toBe(false);
-  });
-});

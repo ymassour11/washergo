@@ -32,12 +32,8 @@ describe("canTransition", () => {
     expect(canTransition("SCHEDULED", "PAID_SETUP")).toBe(true);
   });
 
-  it("allows PAID_SETUP → CONTRACT_SIGNED", () => {
-    expect(canTransition("PAID_SETUP", "CONTRACT_SIGNED")).toBe(true);
-  });
-
-  it("allows CONTRACT_SIGNED → ACTIVE", () => {
-    expect(canTransition("CONTRACT_SIGNED", "ACTIVE")).toBe(true);
+  it("allows PAID_SETUP → ACTIVE", () => {
+    expect(canTransition("PAID_SETUP", "ACTIVE")).toBe(true);
   });
 
   it("allows ACTIVE → PAST_DUE", () => {
@@ -105,12 +101,8 @@ describe("maxStepForStatus", () => {
     expect(maxStepForStatus("SCHEDULED")).toBe(6);
   });
 
-  it("PAID_SETUP allows step 7", () => {
+  it("PAID_SETUP allows step 7 (confirmation)", () => {
     expect(maxStepForStatus("PAID_SETUP")).toBe(7);
-  });
-
-  it("CONTRACT_SIGNED allows step 8", () => {
-    expect(maxStepForStatus("CONTRACT_SIGNED")).toBe(8);
   });
 
   it("CANCELED returns 0", () => {
@@ -141,10 +133,10 @@ describe("STEP_RULES", () => {
     });
   });
 
-  it("step 7 requires PAID_SETUP and completes to CONTRACT_SIGNED", () => {
+  it("step 7 requires PAID_SETUP (confirmation page)", () => {
     expect(STEP_RULES[7]).toEqual({
       requiredStatus: "PAID_SETUP",
-      completesTo: "CONTRACT_SIGNED",
+      completesTo: "PAID_SETUP",
     });
   });
 });

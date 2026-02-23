@@ -317,41 +317,10 @@ export async function PATCH(
       }
 
       case 6: {
-        // Step 6 records consent; payment is via Stripe redirect
+        // Step 6 is payment via Stripe redirect — no data to save here
         updated = await prisma.booking.update({
           where: { id },
           data: { currentStep: Math.max(booking.currentStep, 6) },
-          include: { customer: true, deliverySlot: true },
-        });
-        break;
-      }
-
-      case 7: {
-        const latestContract = await prisma.contractVersion.findFirst({
-          orderBy: { effectiveDate: "desc" },
-        });
-        if (!latestContract) {
-          return NextResponse.json({ error: "No contract version available" }, { status: 500 });
-        }
-
-        const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-        const userAgent = req.headers.get("user-agent") || "unknown";
-
-        const newStatus = canTransition(booking.status, "CONTRACT_SIGNED")
-          ? "CONTRACT_SIGNED"
-          : booking.status;
-
-        updated = await prisma.booking.update({
-          where: { id },
-          data: {
-            contractVersion: { connect: { id: latestContract.id } },
-            contractSignedAt: new Date(),
-            contractSignerName: data.signerName as string,
-            contractSignerIp: ip,
-            contractSignerAgent: userAgent,
-            status: newStatus,
-            currentStep: 8,
-          },
           include: { customer: true, deliverySlot: true },
         });
         break;

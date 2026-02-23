@@ -6,16 +6,14 @@ import { ArrowLeft, Check } from "lucide-react";
 import StepPlan from "./step-plan";
 import StepDetails from "./step-details";
 import StepPayment from "./step-payment";
-import StepContract from "./step-contract";
 import StepConfirmation from "./step-confirmation";
 
-type UIStep = "plan" | "details" | "payment" | "contract" | "success";
+type UIStep = "plan" | "details" | "payment" | "success";
 
 const UI_STEPS: { key: UIStep; label: string; desc: string }[] = [
   { key: "plan", label: "Plan", desc: "Equipment & term" },
   { key: "details", label: "Details", desc: "Delivery info" },
-  { key: "payment", label: "Payment", desc: "Secure checkout" },
-  { key: "contract", label: "Agreement", desc: "Sign contract" },
+  { key: "payment", label: "Payment", desc: "Agreement & checkout" },
   { key: "success", label: "Confirmed", desc: "All set" },
 ];
 
@@ -55,7 +53,6 @@ function backendStepToUIStep(step: number): UIStep {
   if (step <= 2) return "plan";
   if (step <= 5) return "details";
   if (step === 6) return "payment";
-  if (step === 7) return "contract";
   return "success";
 }
 
@@ -193,12 +190,12 @@ export default function Stepper({ bookingId, initialStep, canceled }: StepperPro
       <aside className="w-full md:w-80 lg:w-96 bg-white border-b-4 md:border-b-0 md:border-r-4 border-black p-4 md:p-10 lg:p-12 flex flex-col justify-between sticky top-0 md:h-screen z-40 md:overflow-y-auto">
         <div>
           <div className="mb-6 md:mb-12 flex items-center justify-between md:block">
-            <div>
+            <a href="/" className="block">
               <h1 className="text-2xl md:text-4xl font-black tracking-tighter uppercase leading-none">
                 Go<span className="text-brutal-blue">Wash</span>
               </h1>
               <p className="text-[8px] md:text-[10px] font-bold uppercase tracking-[0.2em] mt-1 md:mt-2 text-gray-500">Premium Subscription</p>
-            </div>
+            </a>
             
             {/* Mobile Back Button */}
             <button
@@ -322,18 +319,6 @@ export default function Stepper({ bookingId, initialStep, canceled }: StepperPro
                 key="payment"
                 booking={booking}
                 bookingId={bookingId}
-                onBack={goBack}
-                saving={saving}
-              />
-            )}
-            {uiStep === "contract" && (
-              <StepContract
-                key="contract"
-                booking={booking}
-                onNext={async (data) => {
-                  const success = await saveStep(7, data);
-                  if (success) goToStep("success");
-                }}
                 onBack={goBack}
                 saving={saving}
               />
