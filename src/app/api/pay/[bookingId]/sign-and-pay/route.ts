@@ -53,10 +53,6 @@ export async function POST(
     return NextResponse.json({ error: "Booking not found" }, { status: 404 });
   }
 
-  if (!booking.payAtDelivery) {
-    return NextResponse.json({ error: "This booking is not pay-at-delivery" }, { status: 400 });
-  }
-
   if (booking.stripeSubscriptionId) {
     return NextResponse.json({ error: "Payment already collected" }, { status: 409 });
   }

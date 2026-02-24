@@ -78,6 +78,17 @@ export default function AdminBookingDetailPage() {
   const [paymentLink, setPaymentLink] = useState<string | null>(null);
   const [paymentLinkCopied, setPaymentLinkCopied] = useState(false);
 
+  // Check if a booking qualifies for a payment link:
+  // has customer info + package/term + no Stripe subscription yet
+  const needsPaymentLink = useCallback((b: BookingDetail | null): boolean => {
+    if (!b) return false;
+    if (b.stripeSubscriptionId) return false;
+    if (!b.packageType || !b.termType) return false;
+    if (!b.customer?.name || !b.customer?.phone) return false;
+    if (["CANCELED", "CLOSED"].includes(b.status)) return false;
+    return true;
+  }, []);
+
   const fetchBooking = useCallback(async () => {
     setLoading(true);
     try {
@@ -88,14 +99,27 @@ export default function AdminBookingDetailPage() {
       }
       const data = await res.json();
       setBooking(data.booking);
+      return data.booking as BookingDetail;
     } finally {
       setLoading(false);
     }
   }, [id]);
 
+  // Fetch booking, then auto-generate payment link if it qualifies
   useEffect(() => {
-    fetchBooking();
-  }, [fetchBooking]);
+    fetchBooking().then((b) => {
+      if (b && needsPaymentLink(b) && !paymentLink) {
+        setPaymentLinkLoading(true);
+        fetch(`/api/admin/bookings/${id}/payment-link`, { method: "POST" })
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.paymentUrl) setPaymentLink(data.paymentUrl);
+          })
+          .catch(() => {})
+          .finally(() => setPaymentLinkLoading(false));
+      }
+    });
+  }, [fetchBooking, id, needsPaymentLink, paymentLink]);
 
   const performAction = async (action: string) => {
     setActionLoading(true);
@@ -333,19 +357,26 @@ export default function AdminBookingDetailPage() {
           </div>
         </section>
 
-        {/* Pay-at-Delivery: Payment Link */}
-        {booking.payAtDelivery && !booking.stripeSubscriptionId && (
+        {/* Payment Link (auto-generated for qualifying bookings) */}
+        {needsPaymentLink(booking) && (
           <section className="rounded-xl border border-amber-200 bg-amber-50 p-6">
             <h2 className="text-sm font-semibold text-amber-800 uppercase tracking-wider mb-4 flex items-center gap-2">
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m9.86-2.556a4.5 4.5 0 00-1.242-7.244l-4.5-4.5a4.5 4.5 0 00-6.364 6.364L4.757 8.188" />
               </svg>
-              Collect Payment
+              Payment Link
             </h2>
             <p className="text-sm text-amber-700 mb-4">
-              This booking chose <strong>pay at delivery</strong>. Generate a link for the delivery person &mdash; the customer will sign the rental contract and then pay via Stripe.
+              {booking.payAtDelivery
+                ? "This customer chose pay at delivery. Share this link to sign the contract and collect payment."
+                : "This customer hasn\u2019t completed payment yet. Share this link to sign the contract and pay."}
             </p>
-            {paymentLink ? (
+            {paymentLinkLoading ? (
+              <div className="flex items-center gap-2 text-sm text-amber-600">
+                <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+                Generating link...
+              </div>
+            ) : paymentLink ? (
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
                   <input
@@ -371,39 +402,19 @@ export default function AdminBookingDetailPage() {
                     )}
                   </button>
                 </div>
-                <p className="text-xs text-amber-600">
-                  Link expires in 24 hours. The customer will sign the contract, then pay.
-                </p>
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-amber-600">
+                    Customer will sign the contract, then pay via Stripe.
+                  </p>
+                  <button
+                    onClick={generatePaymentLink}
+                    className="text-xs font-medium text-amber-700 hover:text-amber-900 underline underline-offset-2"
+                  >
+                    Regenerate
+                  </button>
+                </div>
               </div>
-            ) : (
-              <button
-                onClick={generatePaymentLink}
-                disabled={paymentLinkLoading}
-                className="inline-flex items-center gap-2 rounded-xl bg-amber-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-amber-700 disabled:opacity-50 transition-colors shadow-sm"
-              >
-                {paymentLinkLoading ? (
-                  <>
-                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m9.86-2.556a4.5 4.5 0 00-1.242-7.244l-4.5-4.5a4.5 4.5 0 00-6.364 6.364L4.757 8.188" /></svg>
-                    Generate Payment Link
-                  </>
-                )}
-              </button>
-            )}
-          </section>
-        )}
-
-        {/* Pay-at-Delivery: Payment Collected */}
-        {booking.payAtDelivery && booking.stripeSubscriptionId && (
-          <section className="rounded-xl border border-green-200 bg-green-50 p-6">
-            <div className="flex items-center gap-2">
-              <svg className="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-              <span className="text-sm font-semibold text-green-800">Payment collected via Stripe</span>
-            </div>
+            ) : null}
           </section>
         )}
 

@@ -33,10 +33,6 @@ export async function GET(
     return NextResponse.json({ error: "Booking not found" }, { status: 404 });
   }
 
-  if (!booking.payAtDelivery) {
-    return NextResponse.json({ error: "This booking is not pay-at-delivery" }, { status: 400 });
-  }
-
   return NextResponse.json({
     booking: {
       id: booking.id,

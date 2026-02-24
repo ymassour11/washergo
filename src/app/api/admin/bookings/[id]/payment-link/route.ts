@@ -7,8 +7,10 @@ import { logger } from "@/lib/logger";
 /**
  * POST /api/admin/bookings/[id]/payment-link
  *
- * Generates a signed URL for the delivery-payment page.
- * The delivery person opens this link → signs the contract → pays via Stripe.
+ * Generates a signed URL for the contract + payment page.
+ * Works for:
+ * - Pay-at-delivery bookings that haven't paid yet
+ * - Bookings where the customer abandoned online checkout (has all info but no Stripe subscription)
  *
  * Requires admin session auth.
  */
@@ -26,17 +28,11 @@ export async function POST(
 
   const booking = await prisma.booking.findUnique({
     where: { id },
+    include: { customer: true },
   });
 
   if (!booking) {
     return NextResponse.json({ error: "Booking not found" }, { status: 404 });
-  }
-
-  if (!booking.payAtDelivery) {
-    return NextResponse.json(
-      { error: "This booking did not select pay-at-delivery" },
-      { status: 400 },
-    );
   }
 
   if (booking.stripeSubscriptionId) {
@@ -53,14 +49,21 @@ export async function POST(
     );
   }
 
-  // Generate a signed token for the delivery payment page
+  if (!booking.customer?.name || !booking.customer?.phone) {
+    return NextResponse.json(
+      { error: "Booking is missing customer info" },
+      { status: 400 },
+    );
+  }
+
+  // Generate a signed token for the payment page
   const token = createBookingToken(id);
   const appUrl = (process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").trim();
   const paymentUrl = `${appUrl}/pay/${id}?token=${token}`;
 
   log.info(
-    { bookingId: id, userId: session.user.id },
-    "Payment link generated for pay-at-delivery booking",
+    { bookingId: id, userId: session.user.id, payAtDelivery: booking.payAtDelivery },
+    "Payment link generated",
   );
 
   return NextResponse.json({ paymentUrl });
