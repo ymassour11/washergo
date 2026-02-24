@@ -88,23 +88,33 @@ async function handleCheckoutComplete(payload: Record<string, unknown>, log: App
     return;
   }
 
-  if (!canTransition(booking.status, "PAID_SETUP")) {
+  if (canTransition(booking.status, "PAID_SETUP")) {
+    await prisma.booking.update({
+      where: { id: bookingId },
+      data: {
+        status: "PAID_SETUP",
+        stripeCustomerId: session.customer || null,
+        stripeSubscriptionId: session.subscription || null,
+        stripeCheckoutSessionId: session.id,
+        currentStep: 7,
+      },
+    });
+    log.info({ bookingId }, "Booking advanced to PAID_SETUP");
+  } else if (booking.payAtDelivery && !booking.stripeSubscriptionId) {
+    // Pay-at-delivery booking: already at PAID_SETUP but now collecting payment via Stripe
+    await prisma.booking.update({
+      where: { id: bookingId },
+      data: {
+        stripeCustomerId: session.customer || null,
+        stripeSubscriptionId: session.subscription || null,
+        stripeCheckoutSessionId: session.id,
+      },
+    });
+    log.info({ bookingId }, "Stripe IDs saved for pay-at-delivery booking");
+  } else {
     log.info({ currentStatus: booking.status }, "Booking not eligible for PAID_SETUP transition");
     return;
   }
-
-  await prisma.booking.update({
-    where: { id: bookingId },
-    data: {
-      status: "PAID_SETUP",
-      stripeCustomerId: session.customer || null,
-      stripeSubscriptionId: session.subscription || null,
-      stripeCheckoutSessionId: session.id,
-      currentStep: 7,
-    },
-  });
-
-  log.info({ bookingId }, "Booking advanced to PAID_SETUP");
 }
 
 async function handleInvoiceCreated(payload: Record<string, unknown>, log: AppLogger) {

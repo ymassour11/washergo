@@ -74,6 +74,9 @@ export default function AdminBookingDetailPage() {
   const [editingNotes, setEditingNotes] = useState(false);
   const [notesValue, setNotesValue] = useState("");
   const [savingNotes, setSavingNotes] = useState(false);
+  const [paymentLinkLoading, setPaymentLinkLoading] = useState(false);
+  const [paymentLink, setPaymentLink] = useState<string | null>(null);
+  const [paymentLinkCopied, setPaymentLinkCopied] = useState(false);
 
   const fetchBooking = useCallback(async () => {
     setLoading(true);
@@ -131,6 +134,46 @@ export default function AdminBookingDetailPage() {
       setActionError("Network error");
     } finally {
       setActionLoading(false);
+    }
+  };
+
+  const generatePaymentLink = async () => {
+    setPaymentLinkLoading(true);
+    setActionError(null);
+    setPaymentLink(null);
+    try {
+      const res = await fetch(`/api/admin/bookings/${id}/payment-link`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setActionError(data.error || "Failed to generate payment link");
+        return;
+      }
+      setPaymentLink(data.paymentUrl);
+    } catch {
+      setActionError("Network error");
+    } finally {
+      setPaymentLinkLoading(false);
+    }
+  };
+
+  const copyPaymentLink = async () => {
+    if (!paymentLink) return;
+    try {
+      await navigator.clipboard.writeText(paymentLink);
+      setPaymentLinkCopied(true);
+      setTimeout(() => setPaymentLinkCopied(false), 2000);
+    } catch {
+      // Fallback for non-HTTPS contexts
+      const textArea = document.createElement("textarea");
+      textArea.value = paymentLink;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textArea);
+      setPaymentLinkCopied(true);
+      setTimeout(() => setPaymentLinkCopied(false), 2000);
     }
   };
 
@@ -289,6 +332,80 @@ export default function AdminBookingDetailPage() {
             </div>
           </div>
         </section>
+
+        {/* Pay-at-Delivery: Payment Link */}
+        {booking.payAtDelivery && !booking.stripeSubscriptionId && (
+          <section className="rounded-xl border border-amber-200 bg-amber-50 p-6">
+            <h2 className="text-sm font-semibold text-amber-800 uppercase tracking-wider mb-4 flex items-center gap-2">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m9.86-2.556a4.5 4.5 0 00-1.242-7.244l-4.5-4.5a4.5 4.5 0 00-6.364 6.364L4.757 8.188" />
+              </svg>
+              Collect Payment
+            </h2>
+            <p className="text-sm text-amber-700 mb-4">
+              This booking chose <strong>pay at delivery</strong>. Generate a link for the delivery person &mdash; the customer will sign the rental contract and then pay via Stripe.
+            </p>
+            {paymentLink ? (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <input
+                    readOnly
+                    value={paymentLink}
+                    className="flex-1 rounded-lg border border-amber-300 bg-white px-3 py-2 text-sm font-mono text-[var(--text)] truncate"
+                    onClick={(e) => (e.target as HTMLInputElement).select()}
+                  />
+                  <button
+                    onClick={copyPaymentLink}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700 transition-colors shrink-0"
+                  >
+                    {paymentLinkCopied ? (
+                      <>
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                        Copied
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9.75a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184" /></svg>
+                        Copy
+                      </>
+                    )}
+                  </button>
+                </div>
+                <p className="text-xs text-amber-600">
+                  Link expires in 24 hours. The customer will sign the contract, then pay.
+                </p>
+              </div>
+            ) : (
+              <button
+                onClick={generatePaymentLink}
+                disabled={paymentLinkLoading}
+                className="inline-flex items-center gap-2 rounded-xl bg-amber-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-amber-700 disabled:opacity-50 transition-colors shadow-sm"
+              >
+                {paymentLinkLoading ? (
+                  <>
+                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m9.86-2.556a4.5 4.5 0 00-1.242-7.244l-4.5-4.5a4.5 4.5 0 00-6.364 6.364L4.757 8.188" /></svg>
+                    Generate Payment Link
+                  </>
+                )}
+              </button>
+            )}
+          </section>
+        )}
+
+        {/* Pay-at-Delivery: Payment Collected */}
+        {booking.payAtDelivery && booking.stripeSubscriptionId && (
+          <section className="rounded-xl border border-green-200 bg-green-50 p-6">
+            <div className="flex items-center gap-2">
+              <svg className="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              <span className="text-sm font-semibold text-green-800">Payment collected via Stripe</span>
+            </div>
+          </section>
+        )}
 
         {/* Payment History */}
         <section className="rounded-xl border border-[var(--border)] bg-white p-6">
