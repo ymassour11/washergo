@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "motion/react";
 import { FileText, ArrowRight, Check } from "lucide-react";
+import { useLocale } from "@/i18n";
 
 interface Props {
   booking: {
@@ -19,6 +20,7 @@ export default function StepContract({ booking, onNext, saving }: Props) {
   const [signerName, setSignerName] = useState(booking.contractSignerName || "");
   const [contractText, setContractText] = useState("");
   const [loadingContract, setLoadingContract] = useState(true);
+  const { t, locale } = useLocale();
 
   useEffect(() => {
     if (booking.contractSignedAt) {
@@ -53,6 +55,8 @@ This Rental Agreement ("Agreement") is entered into between the rental provider 
 
   const isValid = accepted && signerName.trim().length >= 2;
 
+  const formattedDate = new Date().toLocaleDateString(locale === "es" ? "es-US" : "en-US", { year: "numeric", month: "long", day: "numeric" });
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -61,8 +65,8 @@ This Rental Agreement ("Agreement") is entered into between the rental provider 
       transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
     >
       <div className="mb-8 md:mb-12">
-        <h2 className="text-4xl sm:text-6xl md:text-7xl font-black tracking-tighter text-black uppercase leading-[0.9] mb-4 md:mb-6">Rental <span className="text-brutal-blue">Agreement</span></h2>
-        <p className="text-black text-sm md:text-lg font-bold uppercase tracking-tight">Review and sign to complete.</p>
+        <h2 className="text-4xl sm:text-6xl md:text-7xl font-black tracking-tighter text-black uppercase leading-[0.9] mb-4 md:mb-6">{t("contract.title1")} <span className="text-brutal-blue">{t("contract.title2")}</span></h2>
+        <p className="text-black text-sm md:text-lg font-bold uppercase tracking-tight">{t("contract.subtitle")}</p>
       </div>
 
       {/* Contract */}
@@ -70,9 +74,9 @@ This Rental Agreement ("Agreement") is entered into between the rental provider 
         <div className="bg-black text-white px-4 py-3 md:px-6 md:py-4 flex items-center justify-between">
           <div className="flex items-center gap-2 md:gap-3 font-black text-[10px] md:text-xs uppercase tracking-widest">
             <FileText className="w-4 h-4 md:w-5 md:h-5 text-brutal-yellow stroke-[3]" />
-            Agreement v1.0
+            {t("contract.version")}
           </div>
-          <span className="text-[8px] md:text-[10px] font-black uppercase tracking-widest opacity-60">Scroll to read</span>
+          <span className="text-[8px] md:text-[10px] font-black uppercase tracking-widest opacity-60">{t("contract.scrollToRead")}</span>
         </div>
         <div className="p-6 md:p-8 max-h-60 md:max-h-80 overflow-y-auto custom-scrollbar bg-white">
           {loadingContract ? (
@@ -101,12 +105,12 @@ This Rental Agreement ("Agreement") is entered into between the rental provider 
           <Check className="w-4 h-4 md:w-5 md:h-5 stroke-[4]" />
         </div>
         <input type="checkbox" checked={accepted} onChange={(e) => setAccepted(e.target.checked)} className="sr-only" />
-        <span className="font-black text-lg md:text-xl uppercase tracking-tighter pt-0.5 md:pt-1">I agree to the terms</span>
+        <span className="font-black text-lg md:text-xl uppercase tracking-tighter pt-0.5 md:pt-1">{t("contract.agree")}</span>
       </label>
 
       {/* Signature */}
       <div className="bg-white p-6 md:p-8 border-3 md:border-4 border-black neo-brutal-shadow mb-8 md:mb-12">
-        <label className="block text-[10px] md:text-xs font-black uppercase tracking-widest text-gray-500 mb-3 md:mb-4">Type your name to sign</label>
+        <label className="block text-[10px] md:text-xs font-black uppercase tracking-widest text-gray-500 mb-3 md:mb-4">{t("contract.signLabel")}</label>
         <input
           type="text"
           value={signerName}
@@ -115,13 +119,13 @@ This Rental Agreement ("Agreement") is entered into between the rental provider 
           className="block w-full px-4 py-4 md:px-6 md:py-6 border-3 md:border-4 border-black bg-white text-black placeholder-gray-300 focus:outline-none focus:ring-4 focus:ring-brutal-blue/20 focus:border-brutal-blue transition-all text-xl md:text-3xl font-black uppercase tracking-tighter"
         />
         {signerName.length >= 2 && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             className="mt-4 md:mt-6 bg-brutal-green p-3 md:p-4 border-2 md:border-3 border-black neo-brutal-shadow inline-flex items-center gap-2 md:gap-3"
           >
             <Check className="w-4 h-4 md:w-5 md:h-5 text-black stroke-[3]" />
-            <p className="text-[10px] md:text-xs font-black uppercase tracking-tight">Signed on {new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}</p>
+            <p className="text-[10px] md:text-xs font-black uppercase tracking-tight">{t("contract.signedOn", { date: formattedDate })}</p>
           </motion.div>
         )}
       </div>
@@ -131,7 +135,7 @@ This Rental Agreement ("Agreement") is entered into between the rental provider 
         disabled={saving || !isValid}
         className="w-full bg-brutal-blue hover:bg-black disabled:bg-gray-300 text-white border-3 md:border-4 border-black py-4 md:py-6 font-black text-lg md:text-2xl uppercase tracking-widest transition-all neo-brutal-shadow-lg hover:translate-x-[-2px] hover:translate-y-[-2px] md:hover:translate-x-[-4px] md:hover:translate-y-[-4px] md:hover:shadow-[12px_12px_0px_0px_#000]"
       >
-        {saving ? "Signing..." : "Sign & Complete"}
+        {saving ? t("contract.signing") : t("contract.signComplete")}
         {!saving && <ArrowRight className="w-5 h-5 md:w-6 md:h-6 ml-2 stroke-[3]" />}
       </button>
     </motion.div>

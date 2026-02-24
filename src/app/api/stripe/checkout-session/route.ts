@@ -25,14 +25,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Missing booking token" }, { status: 401 });
   }
 
-  let body: { bookingId: string };
+  let body: { bookingId: string; locale?: string };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const { bookingId } = body;
+  const { bookingId, locale } = body;
 
   const tokenBookingId = verifyBookingToken(token);
   if (tokenBookingId !== bookingId) {
@@ -100,6 +100,7 @@ export async function POST(req: NextRequest) {
       mode: "subscription",
       line_items: lineItems,
       payment_method_types: ["card"],
+      locale: locale === "es" ? "es" : "auto",
       customer_email: booking.customer?.email || undefined,
       metadata: { bookingId },
       subscription_data: {

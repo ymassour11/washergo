@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { MapPin, Calendar as CalendarIcon, ArrowRight, ShieldCheck, ChevronLeft, ChevronRight } from "lucide-react";
+import { useLocale, useMonthYearFormatter } from "@/i18n";
 
 interface Slot {
   id: string;
@@ -32,6 +33,9 @@ const getDaysInMonth = (year: number, month: number) => new Date(year, month + 1
 const getFirstDayOfMonth = (year: number, month: number) => new Date(year, month, 1).getDay();
 
 export default function StepDetails({ booking, onComplete, saving }: Props) {
+  const { t, locale } = useLocale();
+  const formatMonthYear = useMonthYearFormatter();
+
   const [form, setForm] = useState({
     customerName: booking.customer?.name || "",
     customerEmail: booking.customer?.email || "",
@@ -50,12 +54,17 @@ export default function StepDetails({ booking, onComplete, saving }: Props) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDateKey, setSelectedDateKey] = useState<string | null>(null);
 
+  const DAY_NAMES = [
+    t("details.day.Sun"), t("details.day.Mon"), t("details.day.Tue"),
+    t("details.day.Wed"), t("details.day.Thu"), t("details.day.Fri"), t("details.day.Sat"),
+  ];
+
   useEffect(() => {
     fetch("/api/delivery-slots")
       .then((r) => r.json())
-      .then((data) => { 
-        setSlots(data.slots || []); 
-        setLoadingSlots(false); 
+      .then((data) => {
+        setSlots(data.slots || []);
+        setLoadingSlots(false);
       })
       .catch(() => setLoadingSlots(false));
   }, []);
@@ -133,7 +142,7 @@ export default function StepDetails({ booking, onComplete, saving }: Props) {
 
   const InputLabel = ({ children, optional }: { children: React.ReactNode, optional?: boolean }) => (
     <label className="block text-xs md:text-sm font-black text-black uppercase tracking-widest mb-2 md:mb-3">
-      {children} {optional && <span className="text-gray-400 font-bold">(OPTIONAL)</span>}
+      {children} {optional && <span className="text-gray-400 font-bold">{t("details.optional")}</span>}
     </label>
   );
 
@@ -145,7 +154,7 @@ export default function StepDetails({ booking, onComplete, saving }: Props) {
   const daysInMonth = getDaysInMonth(year, month);
   const firstDay = getFirstDayOfMonth(year, month);
 
-  const calendarDays = [];
+  const calendarDays: (string | null)[] = [];
   for (let i = 0; i < firstDay; i++) {
     calendarDays.push(null);
   }
@@ -158,6 +167,12 @@ export default function StepDetails({ booking, onComplete, saving }: Props) {
   const prevMonth = () => setCurrentMonth(new Date(year, month - 1, 1));
   const nextMonth = () => setCurrentMonth(new Date(year, month + 1, 1));
 
+  const formatSelectedDate = (dateKey: string) => {
+    const [dy, dm, dd] = dateKey.split('-');
+    const d = new Date(parseInt(dy), parseInt(dm) - 1, parseInt(dd));
+    return d.toLocaleDateString(locale === "es" ? "es-US" : "en-US", { weekday: "long", month: "long", day: "numeric" });
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -166,26 +181,26 @@ export default function StepDetails({ booking, onComplete, saving }: Props) {
       transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
     >
       <div className="mb-8 md:mb-12">
-        <h2 className="text-4xl sm:text-6xl md:text-7xl font-black tracking-tighter text-black uppercase leading-[0.9] mb-4 md:mb-6">Your <span className="text-brutal-blue">Details</span></h2>
-        <p className="text-black text-sm md:text-lg font-bold uppercase tracking-tight">Tell us where to bring the goods.</p>
+        <h2 className="text-4xl sm:text-6xl md:text-7xl font-black tracking-tighter text-black uppercase leading-[0.9] mb-4 md:mb-6">{t("details.title1")} <span className="text-brutal-blue">{t("details.title2")}</span></h2>
+        <p className="text-black text-sm md:text-lg font-bold uppercase tracking-tight">{t("details.subtitle")}</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-8 md:space-y-12">
         {/* Contact Info */}
         <div className="bg-white p-6 md:p-8 border-3 md:border-4 border-black neo-brutal-shadow">
-          <h3 className="text-xl md:text-2xl font-black text-black uppercase tracking-tighter mb-6 md:mb-8 border-b-2 md:border-b-4 border-black pb-2 md:pb-4 inline-block">Contact Info</h3>
+          <h3 className="text-xl md:text-2xl font-black text-black uppercase tracking-tighter mb-6 md:mb-8 border-b-2 md:border-b-4 border-black pb-2 md:pb-4 inline-block">{t("details.contactInfo")}</h3>
           <div className="space-y-4 md:space-y-6">
             <div>
-              <InputLabel>Full Name</InputLabel>
+              <InputLabel>{t("details.fullName")}</InputLabel>
               <input type="text" required value={form.customerName} onChange={(e) => update("customerName", e.target.value)} placeholder="JOHN SMITH" className={inputClass} />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
               <div>
-                <InputLabel>Email</InputLabel>
+                <InputLabel>{t("details.email")}</InputLabel>
                 <input type="email" required value={form.customerEmail} onChange={(e) => update("customerEmail", e.target.value)} placeholder="JOHN@GOWASH.COM" className={inputClass} />
               </div>
               <div>
-                <InputLabel>Phone</InputLabel>
+                <InputLabel>{t("details.phone")}</InputLabel>
                 <input type="tel" required value={form.customerPhone} onChange={(e) => update("customerPhone", e.target.value)} placeholder="(713) 555-0100" className={inputClass} />
               </div>
             </div>
@@ -196,28 +211,28 @@ export default function StepDetails({ booking, onComplete, saving }: Props) {
         <div className="bg-white p-6 md:p-8 border-3 md:border-4 border-black neo-brutal-shadow">
           <h3 className="text-xl md:text-2xl font-black text-black uppercase tracking-tighter mb-6 md:mb-8 border-b-2 md:border-b-4 border-black pb-2 md:pb-4 inline-block flex items-center gap-2 md:gap-3">
             <MapPin className="w-5 h-5 md:w-6 md:h-6 text-brutal-blue stroke-[3]" />
-            Delivery Address
+            {t("details.deliveryAddress")}
           </h3>
           <div className="space-y-4 md:space-y-6">
             <div>
-              <InputLabel>Street Address</InputLabel>
+              <InputLabel>{t("details.streetAddress")}</InputLabel>
               <input type="text" required value={form.addressLine1} onChange={(e) => update("addressLine1", e.target.value)} placeholder="123 MAIN STREET" className={inputClass} />
             </div>
             <div>
-              <InputLabel optional>Apt / Unit</InputLabel>
+              <InputLabel optional>{t("details.aptUnit")}</InputLabel>
               <input type="text" value={form.addressLine2} onChange={(e) => update("addressLine2", e.target.value)} placeholder="APT 4B" className={inputClass} />
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 md:gap-6">
               <div className="col-span-2 sm:col-span-1">
-                <InputLabel>City</InputLabel>
+                <InputLabel>{t("details.city")}</InputLabel>
                 <input type="text" required value={form.city} onChange={(e) => update("city", e.target.value)} placeholder="HOUSTON" className={inputClass} />
               </div>
               <div>
-                <InputLabel>State</InputLabel>
+                <InputLabel>{t("details.state")}</InputLabel>
                 <input type="text" required maxLength={2} value={form.state} onChange={(e) => update("state", e.target.value.toUpperCase())} placeholder="TX" className={inputClass} />
               </div>
               <div>
-                <InputLabel>Zip</InputLabel>
+                <InputLabel>{t("details.zip")}</InputLabel>
                 <input type="text" required maxLength={5} value={form.zip} onChange={(e) => update("zip", e.target.value.replace(/\D/g, ""))} placeholder="77001" className={inputClass} />
               </div>
             </div>
@@ -228,7 +243,7 @@ export default function StepDetails({ booking, onComplete, saving }: Props) {
         <div className="bg-white p-6 md:p-8 border-3 md:border-4 border-black neo-brutal-shadow">
           <h3 className="text-xl md:text-2xl font-black text-black uppercase tracking-tighter mb-6 md:mb-8 border-b-2 md:border-b-4 border-black pb-2 md:pb-4 inline-block flex items-center gap-2 md:gap-3">
             <CalendarIcon className="w-5 h-5 md:w-6 md:h-6 text-brutal-blue stroke-[3]" />
-            Delivery Window
+            {t("details.deliveryWindow")}
           </h3>
 
           {loadingSlots ? (
@@ -239,8 +254,8 @@ export default function StepDetails({ booking, onComplete, saving }: Props) {
             </div>
           ) : Object.keys(normalizedGrouped).length === 0 ? (
             <div className="py-12 md:py-16 text-center bg-gray-100 border-2 md:border-4 border-black">
-              <p className="text-base md:text-lg font-black uppercase">No slots available</p>
-              <p className="text-[10px] md:text-xs font-bold uppercase mt-2">Check back later.</p>
+              <p className="text-base md:text-lg font-black uppercase">{t("details.noSlots")}</p>
+              <p className="text-[10px] md:text-xs font-bold uppercase mt-2">{t("details.checkBack")}</p>
             </div>
           ) : (
             <div className="relative min-h-[350px] md:min-h-[400px] flex flex-col overflow-hidden">
@@ -258,24 +273,24 @@ export default function StepDetails({ booking, onComplete, saving }: Props) {
                     <div className="flex items-center justify-between mb-6 md:mb-8">
                       <button type="button" onClick={prevMonth} className="w-10 h-10 md:w-12 md:h-12 border-2 md:border-3 border-black flex items-center justify-center bg-white hover:bg-brutal-yellow transition-colors neo-brutal-shadow"><ChevronLeft className="w-5 h-5 md:w-6 md:h-6 stroke-[3]"/></button>
                       <h4 className="font-black text-lg md:text-2xl uppercase tracking-tighter text-black">
-                        {currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}
+                        {formatMonthYear(currentMonth)}
                       </h4>
                       <button type="button" onClick={nextMonth} className="w-10 h-10 md:w-12 md:h-12 border-2 md:border-3 border-black flex items-center justify-center bg-white hover:bg-brutal-yellow transition-colors neo-brutal-shadow"><ChevronRight className="w-5 h-5 md:w-6 md:h-6 stroke-[3]"/></button>
                     </div>
-                    
+
                     {/* Days of week */}
                     <div className="grid grid-cols-7 gap-1 md:gap-2 mb-2 md:mb-4">
-                      {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => (
+                      {DAY_NAMES.map(d => (
                         <div key={d} className="text-center text-[8px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest">{d}</div>
                       ))}
                     </div>
-                    
+
                     {/* Days Grid */}
                     <div className="grid grid-cols-7 gap-1 md:gap-2">
                       {calendarDays.map((day, idx) => {
                         if (!day) return <div key={`empty-${idx}`} className="h-10 md:h-16" />;
                         const hasSlots = !!normalizedGrouped[day];
-                        
+
                         const today = new Date();
                         today.setHours(0,0,0,0);
                         const [dy, dm, dd] = day.split('-');
@@ -290,7 +305,7 @@ export default function StepDetails({ booking, onComplete, saving }: Props) {
                             onClick={() => setSelectedDateKey(day)}
                             className={`group relative h-10 md:h-16 border-2 md:border-3 border-black flex items-center justify-center text-xs md:text-sm font-black transition-all ${
                               hasSlots && !isPast
-                                ? 'bg-white text-black hover:bg-brutal-blue hover:text-white hover:translate-x-[-2px] hover:translate-y-[-2px] neo-brutal-shadow cursor-pointer' 
+                                ? 'bg-white text-black hover:bg-brutal-blue hover:text-white hover:translate-x-[-2px] hover:translate-y-[-2px] neo-brutal-shadow cursor-pointer'
                                 : 'text-gray-200 cursor-not-allowed bg-gray-50'
                             }`}
                           >
@@ -312,21 +327,18 @@ export default function StepDetails({ booking, onComplete, saving }: Props) {
                     transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
                     className="flex-1"
                   >
-                    <button 
-                      type="button" 
+                    <button
+                      type="button"
                       onClick={() => setSelectedDateKey(null)}
                       className="text-[10px] font-black uppercase tracking-widest text-brutal-blue flex items-center gap-2 mb-6 md:mb-8 bg-white border-2 border-black px-3 py-1.5 md:px-4 md:py-2 neo-brutal-shadow hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none transition-all"
                     >
-                      <ChevronLeft className="w-3 h-3 md:w-4 md:h-4 stroke-[3]" /> Back to calendar
+                      <ChevronLeft className="w-3 h-3 md:w-4 md:h-4 stroke-[3]" /> {t("details.backToCalendar")}
                     </button>
-                    
+
                     <h4 className="font-black text-xl md:text-3xl uppercase tracking-tighter text-black mb-6 md:mb-8 border-b-2 md:border-b-4 border-black pb-2 md:pb-4">
-                      {(() => {
-                        const [dy, dm, dd] = selectedDateKey.split('-');
-                        return new Date(parseInt(dy), parseInt(dm)-1, parseInt(dd)).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
-                      })()}
+                      {formatSelectedDate(selectedDateKey)}
                     </h4>
-                    
+
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
                       {normalizedGrouped[selectedDateKey].map((slot) => (
                         <button
@@ -344,7 +356,7 @@ export default function StepDetails({ booking, onComplete, saving }: Props) {
                             <div className={`text-[8px] md:text-[10px] font-black uppercase tracking-widest mt-1.5 md:mt-2 px-1.5 py-0.5 md:px-2 md:py-1 border-2 border-black inline-block ${
                               selectedSlot === slot.id ? "bg-black text-white" : "bg-brutal-pink text-black"
                             }`}>
-                              Only {slot.remaining} left
+                              {t("details.onlyLeft", { count: String(slot.remaining) })}
                             </div>
                           )}
                         </button>
@@ -361,7 +373,7 @@ export default function StepDetails({ booking, onComplete, saving }: Props) {
         <div className="pt-4 md:pt-8">
           {!selectedSlot && form.customerName && form.addressLine1 && (
             <div className="mb-4 md:mb-6 bg-brutal-yellow p-3 md:p-4 border-2 md:border-3 border-black neo-brutal-shadow text-center">
-              <p className="text-[10px] md:text-xs font-black uppercase tracking-widest">Please select a delivery date & time above</p>
+              <p className="text-[10px] md:text-xs font-black uppercase tracking-widest">{t("details.selectSlotHint")}</p>
             </div>
           )}
           <button
@@ -369,12 +381,12 @@ export default function StepDetails({ booking, onComplete, saving }: Props) {
             disabled={isDisabled}
             className="w-full bg-brutal-blue hover:bg-black disabled:bg-gray-300 text-white border-3 md:border-4 border-black py-4 md:py-6 font-black text-lg md:text-2xl uppercase tracking-widest transition-all neo-brutal-shadow-lg hover:translate-x-[-2px] hover:translate-y-[-2px] md:hover:translate-x-[-4px] md:hover:translate-y-[-4px] md:hover:shadow-[12px_12px_0px_0px_#000]"
           >
-            {submitting || saving ? "Saving..." : "Confirm & Continue"}
+            {submitting || saving ? t("details.saving") : t("details.confirmContinue")}
             {!submitting && !saving && <ArrowRight className="w-5 h-5 md:w-6 md:h-6 ml-2 stroke-[3]" />}
           </button>
           <div className="mt-6 md:mt-8 bg-brutal-green p-3 md:p-4 border-2 md:border-3 border-black neo-brutal-shadow flex items-center justify-center gap-2 md:gap-3">
             <ShieldCheck className="w-5 h-5 md:w-6 md:h-6 text-black stroke-[3]" />
-            <p className="text-[10px] md:text-xs font-black uppercase tracking-tight">Your slot is held for 15 minutes</p>
+            <p className="text-[10px] md:text-xs font-black uppercase tracking-tight">{t("details.slotHeld")}</p>
           </div>
         </div>
       </form>

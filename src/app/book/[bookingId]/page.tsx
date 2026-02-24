@@ -3,6 +3,7 @@
 import { Suspense } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import Stepper from "@/components/booking/stepper";
+import { useLocale } from "@/i18n";
 
 function BookingContent() {
   const params = useParams();
@@ -24,11 +25,13 @@ function BookingContent() {
 }
 
 function LoadingSkeleton() {
+  const { t } = useLocale();
+
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center font-sans text-slate-900">
       <div className="flex flex-col items-center gap-6">
         <div className="w-10 h-10 border-2 border-slate-200 border-t-indigo-600 rounded-full animate-spin" />
-        <p className="text-sm font-medium text-slate-500 tracking-wide">Loading...</p>
+        <p className="text-sm font-medium text-slate-500 tracking-wide">{t("book.loadingSimple")}</p>
       </div>
     </div>
   );

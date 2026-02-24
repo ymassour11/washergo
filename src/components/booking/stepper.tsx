@@ -3,19 +3,14 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { ArrowLeft, Check } from "lucide-react";
+import { useLocale } from "@/i18n";
+import LanguageToggle from "@/i18n/language-toggle";
 import StepPlan from "./step-plan";
 import StepDetails from "./step-details";
 import StepPayment from "./step-payment";
 import StepConfirmation from "./step-confirmation";
 
 type UIStep = "plan" | "details" | "payment" | "success";
-
-const UI_STEPS: { key: UIStep; label: string; desc: string }[] = [
-  { key: "plan", label: "Plan", desc: "Equipment & term" },
-  { key: "details", label: "Details", desc: "Delivery info" },
-  { key: "payment", label: "Payment", desc: "Agreement & checkout" },
-  { key: "success", label: "Confirmed", desc: "All set" },
-];
 
 interface BookingData {
   id: string;
@@ -69,6 +64,14 @@ export default function Stepper({ bookingId, initialStep, canceled }: StepperPro
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { t } = useLocale();
+
+  const UI_STEPS: { key: UIStep; label: string; desc: string }[] = [
+    { key: "plan", label: t("stepper.step.plan"), desc: t("stepper.step.plan.desc") },
+    { key: "details", label: t("stepper.step.details"), desc: t("stepper.step.details.desc") },
+    { key: "payment", label: t("stepper.step.payment"), desc: t("stepper.step.payment.desc") },
+    { key: "success", label: t("stepper.step.confirmed"), desc: t("stepper.step.confirmed.desc") },
+  ];
 
   const fetchBooking = useCallback(async () => {
     try {
@@ -103,11 +106,11 @@ export default function Stepper({ bookingId, initialStep, canceled }: StepperPro
         }
       }
     } catch {
-      setError("Failed to load booking data. Please refresh the page.");
+      setError(t("stepper.loadError"));
     } finally {
       setLoading(false);
     }
-  }, [bookingId, initialStep]);
+  }, [bookingId, initialStep, t]);
 
   useEffect(() => {
     fetchBooking();
@@ -130,14 +133,14 @@ export default function Stepper({ bookingId, initialStep, canceled }: StepperPro
             .join("\n");
           setError(messages);
         } else {
-          setError(result.error || "Failed to save");
+          setError(result.error || t("stepper.saveError"));
         }
         return false;
       }
       setBooking(result.booking);
       return true;
     } catch {
-      setError("Network error. Please try again.");
+      setError(t("stepper.networkError"));
       return false;
     } finally {
       setSaving(false);
@@ -164,7 +167,7 @@ export default function Stepper({ bookingId, initialStep, canceled }: StepperPro
       <div className="min-h-screen bg-gray-50 flex items-center justify-center font-sans text-slate-900">
         <div className="flex flex-col items-center gap-6">
           <div className="w-10 h-10 border-2 border-slate-200 border-t-indigo-600 rounded-full animate-spin" />
-          <p className="text-sm font-medium text-slate-500 tracking-wide">Loading your booking...</p>
+          <p className="text-sm font-medium text-slate-500 tracking-wide">{t("stepper.loading")}</p>
         </div>
       </div>
     );
@@ -177,8 +180,8 @@ export default function Stepper({ bookingId, initialStep, canceled }: StepperPro
           <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-6">
             <span className="text-2xl font-bold">!</span>
           </div>
-          <h2 className="text-2xl font-semibold tracking-tight mb-2">Booking not found</h2>
-          <p className="text-slate-500">This booking may have expired or been removed.</p>
+          <h2 className="text-2xl font-semibold tracking-tight mb-2">{t("stepper.notFound.title")}</h2>
+          <p className="text-slate-500">{t("stepper.notFound.desc")}</p>
         </div>
       </div>
     );
@@ -186,40 +189,50 @@ export default function Stepper({ bookingId, initialStep, canceled }: StepperPro
 
   return (
     <div className="min-h-screen bg-[#F0F0F0] flex flex-col md:flex-row font-sans text-black selection:bg-brutal-blue selection:text-white">
-      
+
       {/* Sidebar for Desktop / Header for Mobile */}
       <aside className="w-full md:w-80 lg:w-96 bg-white border-b-4 md:border-b-0 md:border-r-4 border-black p-4 md:p-10 lg:p-12 flex flex-col justify-between sticky top-0 md:h-screen z-40 md:overflow-y-auto">
         <div>
           <div className="mb-6 md:mb-12 flex items-center justify-between md:block">
             <a href="/" className="block">
-              <h1 className="text-2xl md:text-4xl font-black tracking-tighter uppercase leading-none">
-                Go<span className="text-brutal-blue">Wash</span>
-              </h1>
-              <p className="text-[8px] md:text-[10px] font-bold uppercase tracking-[0.2em] mt-1 md:mt-2 text-gray-500">Premium Subscription</p>
+              <div className="flex items-center gap-3">
+                <div>
+                  <h1 className="text-2xl md:text-4xl font-black tracking-tighter uppercase leading-none">
+                    Go<span className="text-brutal-blue">Wash</span>
+                  </h1>
+                  <p className="text-[8px] md:text-[10px] font-bold uppercase tracking-[0.2em] mt-1 md:mt-2 text-gray-500">{t("stepper.premiumSub")}</p>
+                </div>
+              </div>
             </a>
-            
-            {/* Mobile Back Button */}
-            <button
-              onClick={uiStep === "plan" || uiStep === "success" ? () => { window.location.href = "/book"; } : goBack}
-              className="md:hidden flex items-center justify-center w-10 h-10 bg-white border-2 border-black neo-brutal-shadow active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </button>
+
+            <div className="flex items-center gap-2 md:hidden">
+              <LanguageToggle />
+              {/* Mobile Back Button */}
+              <button
+                onClick={uiStep === "plan" || uiStep === "success" ? () => { window.location.href = "/book"; } : goBack}
+                className="flex items-center justify-center w-10 h-10 bg-white border-2 border-black neo-brutal-shadow active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </button>
+            </div>
           </div>
 
-          <button
-            onClick={uiStep === "plan" || uiStep === "success" ? () => { window.location.href = "/book"; } : goBack}
-            className="hidden md:inline-flex mb-12 items-center gap-3 text-xs font-black uppercase tracking-widest bg-white border-2 border-black px-4 py-2 neo-brutal-shadow hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back
-          </button>
-          
+          <div className="hidden md:flex items-center gap-3 mb-12">
+            <button
+              onClick={uiStep === "plan" || uiStep === "success" ? () => { window.location.href = "/book"; } : goBack}
+              className="inline-flex items-center gap-3 text-xs font-black uppercase tracking-widest bg-white border-2 border-black px-4 py-2 neo-brutal-shadow hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              {t("nav.back")}
+            </button>
+            <LanguageToggle />
+          </div>
+
           <div className="hidden md:flex flex-col gap-6 relative">
             {UI_STEPS.map((s, i) => {
               const isActive = s.key === uiStep;
               const isPast = UI_STEPS.findIndex(x => x.key === uiStep) > i;
-              
+
               return (
                 <div key={s.key} className={`flex items-center gap-4 transition-all duration-300 ${isActive ? 'translate-x-2' : ''}`}>
                   <div className={`w-10 h-10 border-3 border-black flex items-center justify-center text-sm font-black transition-all ${isActive ? 'bg-brutal-yellow neo-brutal-shadow' : isPast ? 'bg-black text-white' : 'bg-white text-gray-300'}`}>
@@ -237,7 +250,7 @@ export default function Stepper({ bookingId, initialStep, canceled }: StepperPro
           {/* Mobile step indicator */}
           <div className="md:hidden">
             <div className="flex items-center justify-between mb-2">
-              <div className="text-[8px] font-black uppercase tracking-widest">Step {currentIndex + 1} / {UI_STEPS.length}</div>
+              <div className="text-[8px] font-black uppercase tracking-widest">{t("stepper.stepOf", { current: String(currentIndex + 1), total: String(UI_STEPS.length) })}</div>
               <div className="text-[10px] font-black uppercase">{UI_STEPS[currentIndex]?.label}</div>
             </div>
             <div className="h-3 w-full bg-white border-2 border-black neo-brutal-shadow overflow-hidden">
@@ -253,8 +266,8 @@ export default function Stepper({ bookingId, initialStep, canceled }: StepperPro
 
         <div className="hidden md:block pt-12 border-t-2 border-black mt-12">
           <div className="bg-brutal-pink p-4 border-3 border-black neo-brutal-shadow">
-            <p className="text-[10px] font-black uppercase leading-tight">Need Help?</p>
-            <a href="mailto:support@gowash.com" className="text-xs font-black uppercase underline mt-1 block">Contact Support</a>
+            <p className="text-[10px] font-black uppercase leading-tight">{t("stepper.needHelp")}</p>
+            <a href="mailto:support@gowash.com" className="text-xs font-black uppercase underline mt-1 block">{t("stepper.contactSupport")}</a>
           </div>
         </div>
       </aside>
@@ -266,7 +279,7 @@ export default function Stepper({ bookingId, initialStep, canceled }: StepperPro
           {canceled && (
             <div className="bg-brutal-yellow border-b-4 border-black px-4 py-3 md:px-6 md:py-4 text-center">
               <p className="text-black font-black uppercase text-[10px] md:text-xs tracking-widest">
-                Payment Canceled. Try again when ready.
+                {t("stepper.paymentCanceled")}
               </p>
             </div>
           )}
