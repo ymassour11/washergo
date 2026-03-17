@@ -44,6 +44,15 @@ const NAV_ITEMS = [
     ),
   },
   {
+    label: "Service Requests",
+    href: "/admin/service-requests",
+    icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M11.42 15.17l-4.655-.84a.75.75 0 01-.543-.427L4.76 10.2a.75.75 0 01.19-.866l3.514-3.197a.75.75 0 01.753-.151l4.47 1.613a.75.75 0 01.479.465l1.29 4.01a.75.75 0 01-.16.786l-3.373 3.285a.75.75 0 01-.503.198z" />
+      </svg>
+    ),
+  },
+  {
     label: "Assets",
     href: "/admin/assets",
     icon: (

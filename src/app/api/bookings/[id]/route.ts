@@ -67,7 +67,7 @@ export async function PATCH(
   }
 
   // Rate limit
-  const rateResult = checkRateLimit(`booking-update:${id}`, BOOKING_UPDATE_LIMIT);
+  const rateResult = await checkRateLimit(`booking-update:${id}`, BOOKING_UPDATE_LIMIT);
   if (!rateResult.allowed) {
     return NextResponse.json(
       { error: "Too many requests" },

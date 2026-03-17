@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
 
   // Rate limit by IP
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-  const rateResult = checkRateLimit(`booking-create:${ip}`, BOOKING_CREATE_LIMIT);
+  const rateResult = await checkRateLimit(`booking-create:${ip}`, BOOKING_CREATE_LIMIT);
 
   if (!rateResult.allowed) {
     log.warn({ ip }, "Rate limit exceeded for booking creation");

@@ -19,7 +19,7 @@ const SECURITY_HEADERS: Record<string, string> = {
     "img-src 'self' data: https:",
     "font-src 'self' https://fonts.gstatic.com",
     "connect-src 'self' https://api.stripe.com https://checkout.stripe.com",
-    "frame-src https://js.stripe.com https://hooks.stripe.com",
+    "frame-src https://js.stripe.com https://hooks.stripe.com https://billing.stripe.com",
     "base-uri 'self'",
     "form-action 'self'",
   ].join("; "),
@@ -66,6 +66,27 @@ export default auth((req) => {
     }
   }
 
+  // Protect portal routes — require authenticated CUSTOMER
+  if (req.nextUrl.pathname.startsWith("/portal")) {
+    if (
+      req.nextUrl.pathname === "/portal/login" ||
+      req.nextUrl.pathname === "/portal/register"
+    ) {
+      return response;
+    }
+
+    const session = req.auth;
+    if (!session?.user) {
+      const loginUrl = new URL("/portal/login", req.url);
+      loginUrl.searchParams.set("callbackUrl", req.nextUrl.pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+
+    if (session.user.role !== "CUSTOMER") {
+      return new NextResponse("Forbidden", { status: 403 });
+    }
+  }
+
   // Protect admin API routes
   if (req.nextUrl.pathname.startsWith("/api/admin")) {
     const session = req.auth;
@@ -74,9 +95,22 @@ export default auth((req) => {
     }
   }
 
-  // CSRF: validate Origin header on mutating admin API requests
+  // Protect portal API routes
+  if (req.nextUrl.pathname.startsWith("/api/portal")) {
+    // Allow register endpoint (public, rate-limited in handler)
+    if (req.nextUrl.pathname === "/api/portal/register") {
+      return response;
+    }
+
+    const session = req.auth;
+    if (!session?.user || session.user.role !== "CUSTOMER") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+  }
+
+  // CSRF: validate Origin header on mutating admin and portal API requests
   if (
-    req.nextUrl.pathname.startsWith("/api/admin") &&
+    (req.nextUrl.pathname.startsWith("/api/admin") || req.nextUrl.pathname.startsWith("/api/portal")) &&
     ["POST", "PATCH", "PUT", "DELETE"].includes(req.method)
   ) {
     const origin = req.headers.get("origin");

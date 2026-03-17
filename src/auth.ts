@@ -7,6 +7,7 @@ import { authConfig } from "@/auth.config";
 declare module "next-auth" {
   interface User {
     role: string;
+    customerId?: string | null;
   }
   interface Session {
     user: {
@@ -14,6 +15,7 @@ declare module "next-auth" {
       email: string;
       name: string | null;
       role: string;
+      customerId: string | null;
     };
   }
 }
@@ -48,6 +50,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           email: user.email,
           name: user.name,
           role: user.role,
+          customerId: user.customerId,
         };
       },
     }),

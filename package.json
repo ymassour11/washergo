@@ -26,6 +26,8 @@
     "@auth/prisma-adapter": "^2.11.1",
     "@prisma/adapter-pg": "^7.4.1",
     "@prisma/client": "^7.4.1",
+    "@upstash/ratelimit": "^2.0.8",
+    "@upstash/redis": "^1.36.2",
     "bcryptjs": "^3.0.3",
     "bullmq": "^5.69.3",
     "dotenv": "^17.3.1",

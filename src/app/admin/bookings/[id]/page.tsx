@@ -77,6 +77,10 @@ export default function AdminBookingDetailPage() {
   const [paymentLinkLoading, setPaymentLinkLoading] = useState(false);
   const [paymentLink, setPaymentLink] = useState<string | null>(null);
   const [paymentLinkCopied, setPaymentLinkCopied] = useState(false);
+  const [portalInviteLoading, setPortalInviteLoading] = useState(false);
+  const [portalInviteUrl, setPortalInviteUrl] = useState<string | null>(null);
+  const [portalInviteCopied, setPortalInviteCopied] = useState(false);
+  const [portalInviteError, setPortalInviteError] = useState<string | null>(null);
 
   // Check if a booking qualifies for a payment link:
   // has customer info + package/term + no Stripe subscription yet
@@ -135,7 +139,11 @@ export default function AdminBookingDetailPage() {
         setActionError(data.error || "Action failed");
         return;
       }
-      await fetchBooking();
+      const updated = await fetchBooking();
+      // Auto-generate portal invite when marking a booking as delivered
+      if (action === "mark_active" && updated?.customer && ["ACTIVE", "PAST_DUE"].includes(updated.status)) {
+        generatePortalInvite();
+      }
     } catch {
       setActionError("Network error");
     } finally {
@@ -213,6 +221,47 @@ export default function AdminBookingDetailPage() {
       await fetchBooking();
     } finally {
       setSavingNotes(false);
+    }
+  };
+
+  const generatePortalInvite = async () => {
+    setPortalInviteLoading(true);
+    setPortalInviteError(null);
+    setPortalInviteUrl(null);
+    try {
+      const res = await fetch("/api/admin/portal-invites", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bookingId: id }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setPortalInviteError(data.error || "Failed to generate invite");
+        return;
+      }
+      setPortalInviteUrl(data.inviteUrl);
+    } catch {
+      setPortalInviteError("Network error");
+    } finally {
+      setPortalInviteLoading(false);
+    }
+  };
+
+  const copyPortalInvite = async () => {
+    if (!portalInviteUrl) return;
+    try {
+      await navigator.clipboard.writeText(portalInviteUrl);
+      setPortalInviteCopied(true);
+      setTimeout(() => setPortalInviteCopied(false), 2000);
+    } catch {
+      const textArea = document.createElement("textarea");
+      textArea.value = portalInviteUrl;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textArea);
+      setPortalInviteCopied(true);
+      setTimeout(() => setPortalInviteCopied(false), 2000);
     }
   };
 
@@ -503,6 +552,77 @@ export default function AdminBookingDetailPage() {
                 </div>
               )}
             </div>
+          </section>
+        )}
+
+        {/* Portal Invite (for active bookings) */}
+        {["ACTIVE", "PAST_DUE"].includes(booking.status) && booking.customer && (
+          <section className="rounded-xl border border-indigo-200 bg-indigo-50 p-6">
+            <h2 className="text-sm font-semibold text-indigo-800 uppercase tracking-wider mb-3 flex items-center gap-2">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+              </svg>
+              Customer Portal
+            </h2>
+            <p className="text-sm text-indigo-700 mb-4">
+              Send a portal invite so the customer can manage their account, view billing, and submit service requests.
+            </p>
+            {portalInviteError && (
+              <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700 mb-3">
+                {portalInviteError}
+              </div>
+            )}
+            {portalInviteUrl ? (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <input
+                    readOnly
+                    value={portalInviteUrl}
+                    className="flex-1 rounded-lg border border-indigo-300 bg-white px-3 py-2 text-sm font-mono text-stone-800 truncate"
+                    onClick={(e) => (e.target as HTMLInputElement).select()}
+                  />
+                  <button
+                    onClick={copyPortalInvite}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 transition-colors shrink-0"
+                  >
+                    {portalInviteCopied ? (
+                      <>
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                        Copied
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9.75a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184" /></svg>
+                        Copy
+                      </>
+                    )}
+                  </button>
+                </div>
+                <p className="text-xs text-indigo-600">
+                  Share this link with the customer. It expires in 7 days.
+                </p>
+              </div>
+            ) : (
+              <button
+                onClick={generatePortalInvite}
+                disabled={portalInviteLoading}
+                className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+              >
+                {portalInviteLoading ? (
+                  <>
+                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+                    </svg>
+                    Send Portal Invite
+                  </>
+                )}
+              </button>
+            )}
           </section>
         )}
 

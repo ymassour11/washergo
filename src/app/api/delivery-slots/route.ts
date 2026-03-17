@@ -1,12 +1,15 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { ensureDeliverySlots } from "@/lib/delivery-slots";
 
 /**
  * GET /api/delivery-slots
  *
  * Returns available delivery slots with remaining capacity.
+ * Auto-generates slots for the next 4 weeks if needed (once per 24h).
  */
 export async function GET() {
+  await ensureDeliverySlots();
   const now = new Date();
   now.setHours(0, 0, 0, 0);
 

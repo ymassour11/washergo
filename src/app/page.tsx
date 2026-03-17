@@ -229,7 +229,7 @@ export default function HomePage() {
                   <div className="bg-[#0055FF] text-white p-6 border-b-4 border-black flex justify-between items-center relative z-10">
                     <div className="flex items-center gap-4">
                       <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center font-bold text-2xl border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] group-hover:-translate-y-1 transition-transform" style={{ color: '#0055FF' }}>
-                        <span className={i === 0 ? "inline-block -translate-x-3" : ""}>{item.step}</span>
+                        {item.step}
                       </div>
                       <span className="text-lg font-bold tracking-widest uppercase">{t("home.step")} <span style={{ color: '#0055FF' }}>{item.step}</span></span>
                     </div>

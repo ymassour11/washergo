@@ -66,10 +66,11 @@ This Rental Agreement ("Agreement") is entered into between the rental provider 
   });
   console.log("  Contract version 1.0 created");
 
-  // ── Delivery slots (next 4 weeks, Tue + Wed + Thu) ──
+  // ── Delivery slots (next 4 weeks, all 7 days) ──
   const slotWindows = [
-    { label: "9:00 AM - 12:00 PM", start: "09:00", end: "12:00" },
-    { label: "1:00 PM - 4:00 PM", start: "13:00", end: "16:00" },
+    { label: "8:00 AM - 11:00 AM", start: "08:00", end: "11:00" },
+    { label: "12:00 PM - 3:00 PM", start: "12:00", end: "15:00" },
+    { label: "3:00 PM - 6:00 PM", start: "15:00", end: "18:00" },
   ];
 
   const today = new Date();
@@ -79,10 +80,6 @@ This Rental Agreement ("Agreement") is entered into between the rental provider 
   for (let dayOffset = 1; dayOffset <= 28; dayOffset++) {
     const date = new Date(today);
     date.setDate(date.getDate() + dayOffset);
-    const dayOfWeek = date.getDay();
-
-    // Only Tue (2), Wed (3), Thu (4)
-    if (dayOfWeek < 2 || dayOfWeek > 4) continue;
 
     for (const window of slotWindows) {
       await prisma.deliverySlot.upsert({
@@ -98,7 +95,7 @@ This Rental Agreement ("Agreement") is entered into between the rental provider 
           windowLabel: window.label,
           windowStart: window.start,
           windowEnd: window.end,
-          capacity: 2,
+          capacity: 3,
         },
       });
       slotCount++;
