@@ -130,7 +130,7 @@ export const PRICING: Record<PackageType, Record<TermType, PricingCell>> = {
       stripeSetupPriceIdEnvKey: "STRIPE_PRICE_WD_6MO_SETUP",
     },
     TWELVE_MONTH: {
-      monthlyPriceCents: 5900,
+      monthlyPriceCents: 5999,
       setupFeeCents: 0,
       stripeMonthlyPriceIdEnvKey: "STRIPE_PRICE_WD_12MO_MONTHLY",
       stripeSetupPriceIdEnvKey: "STRIPE_PRICE_WD_12MO_SETUP",

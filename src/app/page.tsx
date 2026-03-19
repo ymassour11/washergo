@@ -138,7 +138,7 @@ export default function HomePage() {
                   className="absolute z-30 bottom-12 lg:bottom-16 right-4 lg:right-12 bg-[#0055FF] text-white border-4 border-black p-6 lg:p-8 w-72 lg:w-80 brutal-card group hover:rotate-0 transition-transform cursor-default"
                 >
                   <div className="text-sm font-bold uppercase tracking-widest text-white/80 mb-2">{t("home.card.pricing.label")}</div>
-                  <div className="text-6xl lg:text-7xl font-sans font-bold leading-none mb-1">$59<span className="text-2xl">/mo</span></div>
+                  <div className="text-6xl lg:text-7xl font-sans font-bold leading-none mb-1">$59.99<span className="text-2xl">/mo</span></div>
                   <div className="text-xs font-bold uppercase tracking-wider text-white/60 mb-5">{t("home.card.pricing.plan")}</div>
 
                   <button
