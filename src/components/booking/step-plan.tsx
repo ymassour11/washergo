@@ -23,7 +23,8 @@ interface Props {
 }
 
 function formatCents(cents: number): string {
-  return `$${(cents / 100).toFixed(0)}`;
+  const dollars = cents / 100;
+  return cents % 100 === 0 ? `$${dollars.toFixed(0)}` : `$${dollars.toFixed(2)}`;
 }
 
 const EASE = [0.16, 1, 0.3, 1] as const;
