@@ -78,9 +78,13 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // Tax rate (Texas 8.25%)
+  const taxRateId = process.env.STRIPE_TAX_RATE_ID?.trim();
+  const taxRates = taxRateId ? [taxRateId] : [];
+
   // Build line items — only include setup fee if > $0
   const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [
-    { price: monthlyPriceId, quantity: 1 },
+    { price: monthlyPriceId, quantity: 1, tax_rates: taxRates },
   ];
 
   if (pricing.setupFeeCents > 0 && pricing.stripeSetupPriceIdEnvKey) {
@@ -92,7 +96,7 @@ export async function POST(req: NextRequest) {
         { status: 500 },
       );
     }
-    lineItems.push({ price: setupPriceId, quantity: 1 });
+    lineItems.push({ price: setupPriceId, quantity: 1, tax_rates: taxRates });
   }
 
   try {
@@ -106,6 +110,7 @@ export async function POST(req: NextRequest) {
       subscription_data: {
         metadata: { bookingId },
         description: "GoWash appliance rental",
+        ...(taxRateId ? { default_tax_rates: [taxRateId] } : {}),
       },
       success_url: `${appUrl}/book/${bookingId}?step=7&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${appUrl}/book/${bookingId}?step=6&canceled=true`,
